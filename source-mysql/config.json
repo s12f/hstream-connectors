@@ -1,3 +1,0 @@
-{ "hstream": { "serviceUrl": "localhost:6570", "kvStorePath": "/tmp/debezium/kv" },
-  "task": { "hostname": "127.0.0.1", "port": "3306", "user": "root", "password": "k123456" }
-}

@@ -1,6 +1,5 @@
-package io.hstream;
+package io.hstream.io;
 
-import io.hstream.HRecord;
 import io.hstream.Record;
 
 public class SourceRecord {

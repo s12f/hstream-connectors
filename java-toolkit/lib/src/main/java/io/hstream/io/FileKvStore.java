@@ -1,7 +1,7 @@
-package io.hstream;
+package io.hstream.io;
 
 import io.hstream.HRecord;
-import io.hstream.KvStore;
+import io.hstream.io.KvStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;

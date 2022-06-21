@@ -1,19 +1,19 @@
-package io.hstream.debezium;
+package io.hstream.io.impl;
 
 import io.hstream.BufferedProducer;
-import io.hstream.FileKvStore;
+import io.hstream.io.FileKvStore;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
-import io.hstream.KvStore;
-import io.hstream.SourceRecord;
-import io.hstream.SourceTaskContext;
+import io.hstream.io.KvStore;
+import io.hstream.io.SourceRecord;
+import io.hstream.io.SourceTaskContext;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class DebeziumSourceTaskContext implements SourceTaskContext {
+public class SourceTaskContextImpl implements SourceTaskContext {
     HStreamClient client;
     Map<String, BufferedProducer> producers = new HashMap<>();
     KvStore kvStore;

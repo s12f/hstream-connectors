@@ -1,6 +1,8 @@
-package io.hstream;
+package io.hstream.io;
 
-import io.hstream.debezium.DebeziumSourceTaskContext;
+import io.hstream.HRecord;
+import io.hstream.io.SourceTask;
+import io.hstream.io.SourceTaskContext;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.apache.commons.cli.CommandLineParser;

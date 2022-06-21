@@ -1,6 +1,6 @@
-package io.hstream.debezium;
+package source.debezium;
 
-import io.hstream.KvStore;
+import io.hstream.io.KvStore;
 import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.Collection;
@@ -9,11 +9,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.apache.kafka.connect.runtime.WorkerConfig;
-import org.apache.kafka.connect.storage.OffsetBackingStore;
 import org.apache.kafka.connect.util.Callback;
 
 // for debezium
-public class DebeziumOffsetBackingStore implements OffsetBackingStore {
+public class OffsetBackingStore implements org.apache.kafka.connect.storage.OffsetBackingStore {
     static KvStore store;
     static public void setKvStore(KvStore kvStore) {
         store = kvStore;

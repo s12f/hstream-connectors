@@ -1,0 +1,14 @@
+{ 
+    "hstream": { "serviceUrl": "localhost:6570", "kvStorePath": "/tmp/debezium/kv" },
+    "task": {
+        "source": "postgres",
+        "dbHistoryPath": "/tmp/debezium/dbHistoryPath.dat",
+        "properties": {
+            "database.hostname": "127.0.0.1",
+            "database.user": "postgres",
+            "database.password": "postgres",
+            "database.dbname": "d1",
+            "plugin.name": "pgoutput"
+        }
+    }
+}
