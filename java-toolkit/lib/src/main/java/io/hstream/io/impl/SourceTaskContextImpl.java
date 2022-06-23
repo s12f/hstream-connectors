@@ -1,12 +1,12 @@
 package io.hstream.io.impl;
 
 import io.hstream.BufferedProducer;
-import io.hstream.io.FileKvStore;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
 import io.hstream.io.KvStore;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,7 +21,12 @@ public class SourceTaskContextImpl implements SourceTaskContext {
     @Override
     public void init(HRecord cfg) {
         client = HStreamClient.builder().serviceUrl(cfg.getString("serviceUrl")).build();
-        kvStore = new FileKvStore(cfg.getString("kvStorePath"));
+//        kvStore = new FileKvStore(cfg.getString("kvStorePath"));
+        try {
+            kvStore = new ZkKvStore(cfg.getString("zkUrl"), cfg.getString("zkKvPath"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

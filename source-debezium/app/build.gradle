@@ -33,7 +33,9 @@ dependencies {
     implementation 'io.debezium:debezium-api:1.9.3.Final'
     implementation 'io.debezium:debezium-embedded:1.9.3.Final'
     implementation 'io.debezium:debezium-connector-mysql:1.9.3.Final'
-    implementation group: 'io.debezium', name: 'debezium-connector-postgres', version: '1.9.3.Final'
+    implementation 'io.debezium:debezium-connector-postgres:1.9.3.Final'
+    implementation 'io.debezium:debezium-connector-sqlserver:1.9.3.Final'
+
 }
 
 application {

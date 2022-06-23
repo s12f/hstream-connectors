@@ -30,9 +30,9 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
         for (var key : keys) {
             try {
                 var keyStr = Base64.getEncoder().encodeToString(key.array());
-                var valStr = store.get(keyStr);
-                if (valStr != null) {
-                    res.put(key, ByteBuffer.wrap(Base64.getDecoder().decode(store.get(keyStr))));
+                var val = store.get(keyStr);
+                if (val != null) {
+                    res.put(key, ByteBuffer.wrap(val));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -48,8 +48,8 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
         for (var entry : values.entrySet()) {
             try {
                 var keyStr = Base64.getEncoder().encodeToString(entry.getKey().array());
-                var valStr = Base64.getEncoder().encodeToString(entry.getValue().array());
-                store.set(keyStr, valStr);
+                var val = entry.getValue().array();
+                store.set(keyStr, val);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

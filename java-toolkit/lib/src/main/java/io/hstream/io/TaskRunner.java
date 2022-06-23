@@ -36,8 +36,8 @@ public class TaskRunner {
     }
 
     public void run() {
-        ctx.init(cfg.getHRecord("hstream"));
-        sourceTask.init(cfg.getHRecord("task"), ctx);
+        ctx.init(cfg.getHRecord("hstreamConfig"));
+        sourceTask.init(cfg.getHRecord("connectorConfig"), ctx);
         sourceTask.run();
     }
 }

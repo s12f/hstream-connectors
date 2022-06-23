@@ -42,6 +42,7 @@ dependencies {
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
     implementation 'io.debezium:debezium-api:1.9.3.Final'
     implementation 'io.debezium:debezium-embedded:1.9.3.Final'
+    implementation 'org.apache.zookeeper:zookeeper:3.8.0'
 }
 
 publishing {

@@ -47,12 +47,16 @@ class DebeziumSourceTask implements SourceTask {
                 props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
                 props.setProperty("database.port", "5432");
                 break;
+            case "sqlserver":
+                props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector");
+                props.setProperty("database.port", "1433");
+                break;
             default:
                 throw new RuntimeException("unknown source:" + source);
         }
 
         props.setProperty("database.server.id", "85744");
-        props.setProperty("database.server.name", "hstream-source-mysql");
+        props.setProperty("database.server.name", "hstream-source-connector");
         props.setProperty("database.history",
                 "io.debezium.relational.history.FileDatabaseHistory");
         props.setProperty("database.history.file.filename", cfg.getString("dbHistoryPath"));
