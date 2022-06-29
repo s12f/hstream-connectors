@@ -9,6 +9,7 @@ import io.debezium.engine.format.Json;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
+import java.util.List;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 
@@ -24,7 +25,7 @@ class DebeziumSourceTask implements SourceTask {
             throw new RuntimeException(e);
         }
         this.ctx = ctx;
-        var propsJson = cfg.getHRecord("properties");
+        var propsJson = cfg.filterWithKeys(k -> !List.of("source").contains(k));
         var props = new Properties();
         props.setProperty("name", "engine");
         props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
@@ -59,7 +60,7 @@ class DebeziumSourceTask implements SourceTask {
         props.setProperty("database.server.name", "hstream-source-connector");
         props.setProperty("database.history",
                 "io.debezium.relational.history.FileDatabaseHistory");
-        props.setProperty("database.history.file.filename", cfg.getString("dbHistoryPath"));
+        // props.setProperty("database.history.file.filename", cfg.getString("dbHistoryPath"));
 
         for (var key : propsJson.getKeySet()) {
             props.setProperty(key, propsJson.getString(key));

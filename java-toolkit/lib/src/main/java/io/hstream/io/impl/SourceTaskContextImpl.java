@@ -6,7 +6,6 @@ import io.hstream.HStreamClient;
 import io.hstream.io.KvStore;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,12 +19,20 @@ public class SourceTaskContextImpl implements SourceTaskContext {
 
     @Override
     public void init(HRecord cfg) {
-        client = HStreamClient.builder().serviceUrl(cfg.getString("serviceUrl")).build();
-//        kvStore = new FileKvStore(cfg.getString("kvStorePath"));
-        try {
-            kvStore = new ZkKvStore(cfg.getString("zkUrl"), cfg.getString("zkKvPath"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        var hsCfg = cfg.getHRecord("hstream");
+        client = HStreamClient.builder().serviceUrl(hsCfg.getString("serviceUrl")).build();
+        var kvCfg = cfg.getHRecord("kv");
+        var kvType = kvCfg.getString("type");
+        if (kvType.equals("zk")) {
+            try {
+                kvStore = new ZkKvStore(kvCfg.getString("url"), kvCfg.getString("rootPath"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else if (kvType.equals("file")) {
+            kvStore = new FileKvStore(kvCfg.getString("filePath"));
+        } else {
+            throw new RuntimeException("can't handle kv.type:" + kvType);
         }
     }
 
