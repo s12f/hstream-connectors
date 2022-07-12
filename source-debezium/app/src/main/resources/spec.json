@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source-debezium",
+  "description": "the configuration specification of source-debezium",
+  "type": "object",
+  "properties": {
+    "source": {
+      "description": "the source system name, e.g.: mysql, postgres, sqlserver etc.",
+      "type": "string"
+    },
+    "user": {
+      "description": "The database user",
+      "type": "string"
+    },
+    "password": {
+      "description": "The database password",
+      "type": "string"
+    },
+    "host": {
+      "description": "The database host",
+      "type": "string"
+    },
+    "port": {
+      "description": "The database host",
+      "type": "integer"
+    }
+  },
+  "required": [ "source", "user", "password", "host", "port" ]
+}

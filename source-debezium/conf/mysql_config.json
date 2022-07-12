@@ -1,13 +1,11 @@
 { 
-    "hstream": { "serviceUrl": "localhost:6570", "kvStorePath": "/tmp/debezium/kv" },
-    "task": {
+    "hstream": { "serviceUrl": "localhost:6570" },
+    "kv": {"type": "file", "filePath": "/tmp/debezium/kv" },
+    "connector": {
         "source": "mysql",
-        "dbHistoryPath": "/tmp/debezium/dbHistoryPath.dat",
-        "properties": {
-            "database.hostname": "127.0.0.1",
-            "database.port": "3306",
-            "database.user": "root",
-            "database.password": "password"
-        }
+        "host": "127.0.0.1",
+        "port": 3306,
+        "user": "root",
+        "password": "password"
     }
 }

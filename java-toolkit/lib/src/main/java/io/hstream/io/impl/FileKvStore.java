@@ -1,12 +1,15 @@
 package io.hstream.io.impl;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import io.hstream.HRecord;
 import io.hstream.io.KvStore;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FileKvStore implements KvStore {
     Path filePath;
@@ -16,23 +19,46 @@ public class FileKvStore implements KvStore {
     }
 
     @Override
-    public byte[] get(String key) throws Exception {
+    public String get(String key) {
         synchronized (this) {
-            String dataText = Files.readString(filePath);
+            String dataText = null;
+            try {
+                dataText = Files.readString(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             var data = HRecord.newBuilder().merge(dataText).build();
             if (data.contains(key)) {
-                return Base64.getDecoder().decode(data.getString(key));
+                return data.getString(key);
             }
             return null;
         }
     }
 
     @Override
-    public void set(String key, byte[] val) throws Exception {
+    public Map<String, String> toMap() {
         synchronized (this) {
-            String dataText = Files.readString(filePath);
-            var newData = HRecord.newBuilder().merge(dataText).put(key, Base64.getEncoder().encodeToString(val)).build();
-            Files.writeString(filePath, newData.toJsonString());
+            try {
+                String dataText = Files.readString(filePath);
+                var data = HRecord.newBuilder().merge(dataText).build();
+                return data.getKeySet().stream().collect(Collectors.toMap(k -> k, data::getString));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void set(String key, String val) {
+        synchronized (this) {
+            String dataText = null;
+            try {
+                dataText = Files.readString(filePath);
+                var newData = HRecord.newBuilder().merge(dataText).put(key, val).build();
+                Files.writeString(filePath, newData.toJsonString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
