@@ -23,6 +23,7 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
     protected void storeRecord(HistoryRecord record) throws DatabaseHistoryException {
         try {
             String line = writer.write(record.document());
+            logger.info("storing record:{}", line);
             var hc = kv.get("history_count");
             if (hc == null) {
                 kv.set("history_0", line);
@@ -41,6 +42,7 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
     protected void recoverRecords(Consumer<HistoryRecord> records) {
         var hc = kv.get("history_count");
         if (hc == null) {
+            logger.info("history_count is null");
             return;
         }
         for (int i = 0; i < Integer.parseInt(hc); i++) {
@@ -55,11 +57,14 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
 
     @Override
     public boolean exists() {
-        return false;
+        if (!storageExists()) {
+            return false;
+        }
+        return kv.get("history_count") != null;
     }
 
     @Override
     public boolean storageExists() {
-        return false;
+        return kv != null;
     }
 }

@@ -4,9 +4,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchemaFactory;
@@ -16,12 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
-import java.util.stream.Collectors;
-import org.everit.json.schema.Schema;
-import org.everit.json.schema.ValidationException;
-import org.everit.json.schema.loader.SchemaLoader;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +54,8 @@ public class TaskRunner {
     JsonNode cfgNode;
     HRecord cfg;
     Task task;
+    Scanner scanner;
+    String taskType = "source";
 
     Logger logger = LoggerFactory.getLogger(TaskRunner.class);
 
@@ -78,32 +71,47 @@ public class TaskRunner {
                 .build();
         try {
             jc.parse(args);
-            switch (jc.getParsedCommand()) {
-                case "spec":
-                    send(task.spec());
-                    break;
-                case "check":
-                    parseConfig(checkCmd.configPath);
-                    check(task);
-                    break;
-                case "run":
-                    parseConfig(runCmd.configPath);
-                    ctx.init(cfg);
-                    if (task instanceof SourceTask) {
-                        ((SourceTask)task).init(cfg.getHRecord("connector"), (SourceTaskContext) taskContext);
-                    }
-                    new Thread(this::recvCmd).start();
-                    task.run();
-                    break;
-                default:
-                    logger.error("invalid cmd:{}", jc.getParsedCommand());
-            }
         } catch (ParameterException e) {
             logger.error(e.getMessage());
             jc.usage();
             System.exit(1);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        }
+        switch (jc.getParsedCommand()) {
+            case "spec":
+                send(task.spec());
+                break;
+            case "check":
+                parseConfig(checkCmd.configPath);
+                check(task);
+                break;
+            case "run":
+                parseConfig(runCmd.configPath);
+
+                scanner = new Scanner(System.in);
+                new Thread(this::recvCmd).start();
+
+                var connectorConfig = cfg.getHRecord("connector");
+                try {
+                    parseConfig(runCmd.configPath);
+                    if (task instanceof SourceTask) {
+                        var st = (SourceTask) task;
+                        var stc = (SourceTaskContext) taskContext;
+                        stc.init(cfg);
+                        st.run(connectorConfig, stc);
+                    } else {
+                        var st = (SinkTask) task;
+                        var stc = (SinkTaskContext) taskContext;
+                        stc.init(cfg, st);
+                        st.init(connectorConfig, stc);
+                        stc.run();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    stop();
+                }
+                break;
+            default:
+                logger.error("invalid cmd:{}", jc.getParsedCommand());
         }
     }
 
@@ -128,22 +136,29 @@ public class TaskRunner {
         }
     }
 
-    void parseConfig(String cfgPath) throws IOException {
+    void parseConfig(String cfgPath) {
         logger.info("config file path:{}", cfgPath);
-        String cfgText = Files.readString(Paths.get(cfgPath));
-        this.cfg = HRecord.newBuilder().merge(cfgText).build();
-        this.cfgNode = new ObjectMapper().readTree(cfgText);
+        String cfgText = null;
+        try {
+            cfgText = Files.readString(Paths.get(cfgPath));
+            this.cfg = HRecord.newBuilder().merge(cfgText).build();
+            this.cfgNode = new ObjectMapper().readTree(cfgText);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
     public void recvCmd() {
-        Scanner scan=new Scanner(System.in);
+        logger.info("receiving commands");
         while (true) {
-            var line = scan.nextLine();
+            var line = scanner.nextLine();
+            logger.info("received line:{}", line);
             try {
                 var cmd = HRecord.newBuilder().merge(line).build();
                 var cmdType = cmd.getString("type");
                 if (cmdType.equals("stop")) {
+                    stop();
                     break;
                 }
             } catch (Exception e) {
@@ -157,9 +172,21 @@ public class TaskRunner {
         System.out.flush();
     }
 
-    public void stop() throws Exception {
-        task.stop();
-        ctx.close();
+    public void stop() {
+        logger.info("stopping runner");
+        scanner.close();
+        logger.info("stopped scanner");
+        if (task instanceof SourceTask) {
+            task.stop();
+            logger.info("stopped task");
+            ctx.close();
+            logger.info("stopped context");
+        } else {
+            ctx.close();
+            logger.info("stopped context");
+            task.stop();
+            logger.info("stopped task");
+        }
+        logger.info("stopped runner");
     }
 }
-

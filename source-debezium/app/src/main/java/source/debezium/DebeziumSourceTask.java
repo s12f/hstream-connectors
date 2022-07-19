@@ -22,7 +22,7 @@ class DebeziumSourceTask implements SourceTask {
     SourceTaskContext ctx;
 
     @Override
-    public void init(HRecord cfg, SourceTaskContext ctx) {
+    public void run(HRecord cfg, SourceTaskContext ctx) {
         try {
             System.out.println("cfg:" + cfg.toJsonString());
         } catch (Exception e) {
@@ -46,7 +46,7 @@ class DebeziumSourceTask implements SourceTask {
             case "mysql":
                 props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector");
                 break;
-            case "postgres":
+            case "postgresql":
                 props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
                 break;
             case "sqlserver":
@@ -55,7 +55,7 @@ class DebeziumSourceTask implements SourceTask {
             default:
                 throw new RuntimeException("unknown source:" + source);
         }
-        if (List.of("mysql", "postgres", "sqlserver").contains(source)) {
+        if (List.of("mysql", "postgresql", "sqlserver").contains(source)) {
             props.setProperty("database.hostname", cfg.getString("host"));
             props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
             props.setProperty("database.user", cfg.getString("user"));
@@ -63,9 +63,18 @@ class DebeziumSourceTask implements SourceTask {
         }
 
 //        props.setProperty("database.server.id", "85744");
-        props.setProperty("database.server.name", cfg.getString("source"));
+        var namespace = cfg.getString("source");
+        if (cfg.contains("namespace")) {
+            namespace = cfg.getString("namespace");
+        }
+        props.setProperty("database.server.name", namespace);
         DatabaseHistory.setKv(ctx.getKvStore());
         props.setProperty("database.history", "source.debezium.DatabaseHistory");
+
+        // transforms
+        props.setProperty("transforms", "unwrap");
+        props.setProperty("transforms.unwrap.type", "io.debezium.transforms.ExtractNewRecordState");
+        props.setProperty("transforms.unwrap.drop.tombstones", "false");
 
         // Create the engine with this configuration ...
         engine = DebeziumEngine.create(Json.class)
@@ -73,6 +82,8 @@ class DebeziumSourceTask implements SourceTask {
                 .using(OffsetCommitPolicy.always())
                 .notifying(new RecordConsumer(ctx))
                 .build();
+
+        engine.run();
     }
 
     @Override
@@ -86,12 +97,11 @@ class DebeziumSourceTask implements SourceTask {
     }
 
     @Override
-    public void run() {
-        engine.run();
-    }
-
-    @Override
-    public void stop() throws Exception {
-        engine.close();
+    public void stop() {
+        try {
+            engine.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

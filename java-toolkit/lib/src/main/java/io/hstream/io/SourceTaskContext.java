@@ -6,6 +6,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface SourceTaskContext extends TaskContext {
+    void init(HRecord cfg);
     CompletableFuture<String> send(SourceRecord sourceRecord);
-    void sendSync(List<SourceRecord> sourceRecordList);
 }
