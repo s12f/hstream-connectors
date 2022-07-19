@@ -19,7 +19,10 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
     public void handleBatch(List<ChangeEvent<String, String>> records, DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> committer) throws InterruptedException {
         final int[] rs = {records.size()};
         for (var r : records) {
-            if (r.value() == null) {
+            System.out.println("key:" + r.key());
+            System.out.println("val:" + r.value());
+            System.out.println("dst:" + r.destination());
+            if (r.key() == null) {
                 continue;
             }
             var future = ctx.send(toSourceRecord(r));
@@ -38,12 +41,17 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
     }
 
     private SourceRecord toSourceRecord(ChangeEvent<String, String> record) {
-        System.out.println("key:" + record.key());
-        System.out.println("val:" + record.value());
-        System.out.println("dst:" + record.destination());
-        System.out.println();
-        var hRecord = HRecord.newBuilder().merge(record.value()).build();
-        System.out.println("hrecord:" + hRecord.toJsonString());
+        var keyRecord = HRecord.newBuilder().merge(record.key()).build();
+        var hRecordBuilder
+                = HRecord.newBuilder()
+                .put("key", keyRecord);
+        if (record.value() == null) {
+            hRecordBuilder.putNull("value");
+        } else {
+            hRecordBuilder.put("value", HRecord.newBuilder().merge(record.value()).build());
+        }
+        var hRecord = hRecordBuilder.build();
+        System.out.println("hRecord:" + hRecord.toJsonString());
         var r = Record.newBuilder().hRecord(hRecord).build();
         return new SourceRecord(record.destination(), r);
     }

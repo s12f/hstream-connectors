@@ -7,8 +7,6 @@ import io.hstream.io.KvStore;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,19 +19,7 @@ public class SourceTaskContextImpl implements SourceTaskContext {
     public void init(HRecord cfg) {
         var hsCfg = cfg.getHRecord("hstream");
         client = HStreamClient.builder().serviceUrl(hsCfg.getString("serviceUrl")).build();
-        var kvCfg = cfg.getHRecord("kv");
-        var kvType = kvCfg.getString("type");
-        if (kvType.equals("zk")) {
-            try {
-                kvStore = new ZkKvStore(kvCfg.getString("url"), kvCfg.getString("rootPath"));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else if (kvType.equals("file")) {
-            kvStore = new FileKvStore(kvCfg.getString("filePath"));
-        } else {
-            throw new RuntimeException("can't handle kv.type:" + kvType);
-        }
+        kvStore = Utils.makeKvStoreFromConfig(cfg);
     }
 
     @Override
@@ -51,22 +37,17 @@ public class SourceTaskContextImpl implements SourceTaskContext {
     }
 
     @Override
-    public void sendSync(List<SourceRecord> sourceRecordList) {
-        var fs = new LinkedList<CompletableFuture<String>>();
-        for (var sr : sourceRecordList) {
-            fs.add(send(sr));
-        }
-        fs.forEach(CompletableFuture::join);
-    }
-
-    @Override
     public KvStore getKvStore() {
         return kvStore;
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         producers.values().forEach(BufferedProducer::close);
-        client.close();
+        try {
+            client.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

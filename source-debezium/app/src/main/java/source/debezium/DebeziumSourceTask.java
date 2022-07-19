@@ -3,13 +3,17 @@
  */
 package source.debezium;
 
+import com.google.protobuf.TextFormat;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 
@@ -18,18 +22,17 @@ class DebeziumSourceTask implements SourceTask {
     SourceTaskContext ctx;
 
     @Override
-    public void init(HRecord cfg, SourceTaskContext ctx) {
+    public void run(HRecord cfg, SourceTaskContext ctx) {
         try {
             System.out.println("cfg:" + cfg.toJsonString());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         this.ctx = ctx;
-        var propsJson = cfg.filterWithKeys(k -> !List.of("source").contains(k));
         var props = new Properties();
         props.setProperty("name", "engine");
-        props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
         OffsetBackingStore.setKvStore(ctx.getKvStore());
+        props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
         props.setProperty("offset.flush.interval.ms", "10000");
 
         // schema
@@ -42,29 +45,36 @@ class DebeziumSourceTask implements SourceTask {
         switch (source) {
             case "mysql":
                 props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector");
-                props.setProperty("database.port", "3306");
                 break;
-            case "postgres":
+            case "postgresql":
                 props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
-                props.setProperty("database.port", "5432");
                 break;
             case "sqlserver":
                 props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector");
-                props.setProperty("database.port", "1433");
                 break;
             default:
                 throw new RuntimeException("unknown source:" + source);
         }
-
-        props.setProperty("database.server.id", "85744");
-        props.setProperty("database.server.name", "hstream-source-connector");
-        props.setProperty("database.history",
-                "io.debezium.relational.history.FileDatabaseHistory");
-        // props.setProperty("database.history.file.filename", cfg.getString("dbHistoryPath"));
-
-        for (var key : propsJson.getKeySet()) {
-            props.setProperty(key, propsJson.getString(key));
+        if (List.of("mysql", "postgresql", "sqlserver").contains(source)) {
+            props.setProperty("database.hostname", cfg.getString("host"));
+            props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
+            props.setProperty("database.user", cfg.getString("user"));
+            props.setProperty("database.password", cfg.getString("password"));
         }
+
+//        props.setProperty("database.server.id", "85744");
+        var namespace = cfg.getString("source");
+        if (cfg.contains("namespace")) {
+            namespace = cfg.getString("namespace");
+        }
+        props.setProperty("database.server.name", namespace);
+        DatabaseHistory.setKv(ctx.getKvStore());
+        props.setProperty("database.history", "source.debezium.DatabaseHistory");
+
+        // transforms
+        props.setProperty("transforms", "unwrap");
+        props.setProperty("transforms.unwrap.type", "io.debezium.transforms.ExtractNewRecordState");
+        props.setProperty("transforms.unwrap.drop.tombstones", "false");
 
         // Create the engine with this configuration ...
         engine = DebeziumEngine.create(Json.class)
@@ -72,15 +82,26 @@ class DebeziumSourceTask implements SourceTask {
                 .using(OffsetCommitPolicy.always())
                 .notifying(new RecordConsumer(ctx))
                 .build();
-    }
 
-    @Override
-    public void run() {
         engine.run();
     }
 
     @Override
-    public void stop() throws Exception {
-        engine.close();
+    public String spec() {
+        try {
+            var data = Objects.requireNonNull(getClass().getResourceAsStream("/spec.json")).readAllBytes();
+            return new String(data, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void stop() {
+        try {
+            engine.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

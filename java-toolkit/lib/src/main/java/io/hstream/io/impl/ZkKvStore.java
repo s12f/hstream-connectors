@@ -1,7 +1,10 @@
 package io.hstream.io.impl;
 
 import io.hstream.io.KvStore;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -21,26 +24,49 @@ public class ZkKvStore implements KvStore {
     }
 
     @Override
-    public void set(String key, byte[] val) throws InterruptedException, KeeperException {
+    public void set(String key, String val) {
         var path = kvPath + "/" + key;
-        if (zk.exists(path, false) == null) {
-            try {
-                zk.create(path, val, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                return;
-            } catch (KeeperException.NodeExistsException ignored) {}
+        try {
+            if (zk.exists(path, false) == null) {
+                try {
+                    zk.create(path, val.getBytes(StandardCharsets.UTF_8),
+                            ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    return;
+                } catch (KeeperException.NodeExistsException ignored) {}
+            }
+            zk.setData(path, val.getBytes(StandardCharsets.UTF_8), -1);
+        } catch (KeeperException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        zk.setData(path, val, -1);
     }
 
     @Override
-    public byte[] get(String key) throws Exception {
+    public String get(String key) {
         var path = kvPath + "/" + key;
         var stat = new Stat();
         try {
-            return zk.getData(path, false, stat);
+            return new String(zk.getData(path, false, stat), StandardCharsets.UTF_8);
         } catch (KeeperException.NoNodeException e) {
             return null;
+        } catch (InterruptedException | KeeperException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    // TODO: atomically read
+    @Override
+    public Map<String, String> toMap() {
+        var result = new HashMap<String, String>();
+        try {
+            var keys = zk.getChildren(kvPath, false);
+            for (var key : keys) {
+                var val = zk.getData(kvPath + "/" + key, false, new Stat());
+                result.put(key, new String(val, StandardCharsets.UTF_8));
+            }
+        } catch (InterruptedException | KeeperException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
     @Override

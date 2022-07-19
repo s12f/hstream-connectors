@@ -5,8 +5,6 @@ package io.hstream.io;
 
 import io.hstream.HRecord;
 
-public interface SourceTask {
-    void init(HRecord config, SourceTaskContext ctx);
-    void run();
-    void stop() throws Exception;
+public interface SourceTask extends Task {
+    void run(HRecord config, SourceTaskContext ctx);
 }
