@@ -20,10 +20,18 @@
       "description": "The database port",
       "type": "integer"
     },
-    "streams": {
-      "description": "The streams and mapping",
+    "stream": {
+      "description": "The HStream stream",
+      "type": "string"
+    },
+    "database": {
+      "description": "The target database name",
+      "type": "string"
+    },
+    "table": {
+      "description": "The target database name",
       "type": "string"
     }
   },
-  "required": [ "user", "password", "host", "port", "streams" ]
+  "required": [ "user", "password", "host", "port", "stream", "database", "table" ]
 }

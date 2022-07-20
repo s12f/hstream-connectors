@@ -42,15 +42,19 @@ class DebeziumSourceTask implements SourceTask {
         props.setProperty("value.converter.schemas.enable", "false");
 
         var source = cfg.getString("source");
+        var dbname = cfg.getString("database");
         switch (source) {
             case "mysql":
                 props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector");
+                props.setProperty("database.include.list", dbname);
                 break;
             case "postgresql":
                 props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
+                props.setProperty("database.dbname", dbname);
                 break;
             case "sqlserver":
                 props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector");
+                props.setProperty("database.dbname", dbname);
                 break;
             default:
                 throw new RuntimeException("unknown source:" + source);
@@ -60,13 +64,14 @@ class DebeziumSourceTask implements SourceTask {
             props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
             props.setProperty("database.user", cfg.getString("user"));
             props.setProperty("database.password", cfg.getString("password"));
+            props.setProperty("table.include.list", cfg.getString("table"));
         }
 
 //        props.setProperty("database.server.id", "85744");
-        var namespace = cfg.getString("source");
-        if (cfg.contains("namespace")) {
-            namespace = cfg.getString("namespace");
-        }
+        var namespace = "debezium";
+//        if (cfg.contains("namespace")) {
+//            namespace = cfg.getString("namespace");
+//        }
         props.setProperty("database.server.name", namespace);
         DatabaseHistory.setKv(ctx.getKvStore());
         props.setProperty("database.history", "source.debezium.DatabaseHistory");
@@ -80,7 +85,7 @@ class DebeziumSourceTask implements SourceTask {
         engine = DebeziumEngine.create(Json.class)
                 .using(props)
                 .using(OffsetCommitPolicy.always())
-                .notifying(new RecordConsumer(ctx))
+                .notifying(new RecordConsumer(ctx, namespace, cfg.getString("stream")))
                 .build();
 
         engine.run();

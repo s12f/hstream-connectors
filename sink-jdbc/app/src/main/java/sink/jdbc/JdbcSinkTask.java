@@ -18,37 +18,25 @@ public class JdbcSinkTask implements SinkTask {
     HRecord cfg;
     SinkTaskContext ctx;
     String sinkSystem;
-    final Map<String, DB> dbs = new HashMap<>();
+    DB db;
 
     @Override
     public void init(HRecord config, SinkTaskContext sinkTaskContext) {
         this.cfg = config;
         this.ctx = sinkTaskContext;
         this.sinkSystem = config.getString("sink");
-        initDbs(config.getString("streams"));
-    }
-
-    void initDbs(String streams) {
-        var ss = io.hstream.io.impl.Utils.parseStreams(streams);
-        for (var target : ss.values()) {
-            DB db;
-            switch (sinkSystem) {
-                case "mysql":
-                    db = new Mysql();
-                    break;
-                case "postgresql":
-                    db = new Postgresql();
-                    break;
-                default:
-                    throw new RuntimeException("unimplemented in sink-jdbc:" + sinkSystem);
-            }
-            db.init(Utils.parseTarget(target), cfg);
-            dbs.put(target, db);
+        switch (sinkSystem) {
+            case "mysql":
+                db = new Mysql();
+                break;
+            case "postgresql":
+                db = new Postgresql();
+                break;
+            default:
+                throw new RuntimeException("unimplemented in sink-jdbc:" + sinkSystem);
         }
-    }
-
-    DB getDB(String target) {
-        return dbs.get(target);
+        var target = new DB.Target(cfg.getString("database"), cfg.getString("table"));
+        db.init(target, cfg);
     }
 
     @Override
@@ -57,9 +45,9 @@ public class JdbcSinkTask implements SinkTask {
             var m = record.record.getDelegate().getFieldsMap();
             try {
                 if (m.get("value").hasNullValue()) {
-                delete(target, List.of(record));
+                    delete(target, List.of(record));
                 } else {
-                        upsert(target, records);
+                    upsert(target, records);
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -70,7 +58,7 @@ public class JdbcSinkTask implements SinkTask {
     void upsert(String target, List<SinkRecord> records) throws SQLException {
         var fields = getFields(records.get(0));
         var keys = getKeys(records.get(0));
-        PreparedStatement stmt = getDB(target).getUpsertStmt(fields, keys);
+        PreparedStatement stmt = db.getUpsertStmt(fields, keys);
         for(var record : records) {
             var m = record.record.getHRecord("value").getDelegate().getFieldsMap();
             for(int i = 0; i < fields.size(); i++) {
@@ -84,7 +72,7 @@ public class JdbcSinkTask implements SinkTask {
 
     void delete(String target, List<SinkRecord> records) throws SQLException {
         var keys = getKeys(records.get(0));
-        PreparedStatement stmt = getDB(target).getDeleteStmt(keys);
+        PreparedStatement stmt = db.getDeleteStmt(keys);
         for(var record : records) {
             var m = record.record.getHRecord("key").getDelegate().getFieldsMap();
             for(int i = 0; i < keys.size(); i++) {
@@ -133,6 +121,6 @@ public class JdbcSinkTask implements SinkTask {
 
     @Override
     public void stop() {
-        dbs.values().forEach(DB::close);
+        db.close();
     }
 }

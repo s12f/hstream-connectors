@@ -4,10 +4,6 @@
   "description": "the configuration specification of source-debezium",
   "type": "object",
   "properties": {
-    "source": {
-      "description": "the source system name, e.g.: mysql, postgres, sqlserver etc.",
-      "type": "string"
-    },
     "user": {
       "description": "The database user",
       "type": "string"
@@ -23,7 +19,19 @@
     "port": {
       "description": "The database host",
       "type": "integer"
+    },
+    "database": {
+      "description": "The database name",
+      "type": "string"
+    },
+    "table": {
+      "description": "The table name",
+      "type": "string"
+    },
+    "stream": {
+      "description": "The HStream stream name",
+      "type": "string"
     }
   },
-  "required": [ "source", "user", "password", "host", "port" ]
+  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
 }
