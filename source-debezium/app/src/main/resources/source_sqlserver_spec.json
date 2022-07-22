@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source-sqlserver",
+  "description": "the configuration specification of source-sqlserver",
+  "type": "object",
+  "properties": {
+    "user": {
+      "title": "user name",
+      "description": "sqlserver user name",
+      "type": "string"
+    },
+    "password": {
+      "title": "password",
+      "description": "sqlserver password",
+      "type": "string"
+    },
+    "host": {
+      "title": "Hostname",
+      "description": "sqlserver hostname",
+      "type": "string"
+    },
+    "port": {
+      "title": "Port Number",
+      "description": "sqlserver port number",
+      "type": "integer",
+      "examples": [1433]
+    },
+    "database": {
+      "title": "Database Name",
+      "description": "sqlserver database name",
+      "type": "string"
+    },
+    "table": {
+      "title": "Table Name",
+      "description": "table name of the database",
+      "type": "string",
+      "examples": ["t1", "dbo.t1"]
+    },
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string"
+    }
+  },
+  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+}

@@ -1,35 +1,35 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "sink-jdbc",
-  "description": "the configuration specification of sink-jdbc",
+  "title": "sink-mysql",
+  "description": "the configuration specification of sink-mysql",
   "type": "object",
   "properties": {
     "user": {
-      "description": "The database user",
+      "description": "mysql user",
       "type": "string"
     },
     "password": {
-      "description": "The database password",
+      "description": "mysql password",
       "type": "string"
     },
     "host": {
-      "description": "The database hostname",
+      "description": "mysql hostname",
       "type": "string"
     },
     "port": {
-      "description": "The database port",
+      "description": "mysql port",
       "type": "integer"
     },
     "stream": {
-      "description": "The HStream stream",
+      "description": "source HStream stream name",
       "type": "string"
     },
     "database": {
-      "description": "The target database name",
+      "description": "target database name",
       "type": "string"
     },
     "table": {
-      "description": "The target database name",
+      "description": "table name of the database",
       "type": "string"
     }
   },
