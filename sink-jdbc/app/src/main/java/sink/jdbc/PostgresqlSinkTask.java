@@ -1,6 +1,9 @@
 package sink.jdbc;
 
 import io.hstream.HRecord;
+import io.hstream.io.SinkTaskContext;
+import io.hstream.io.TaskRunner;
+import io.hstream.io.impl.SinkTaskContextImpl;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,21 +12,24 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-public class Postgresql implements DB {
+public class PostgresqlSinkTask extends JdbcSinkTask {
     String host;
     int port;
     String user;
     String password;
-    Target target;
+    String database;
+    String table;
     Connection conn;
 
     @Override
-    public void init(Target target, HRecord cfg) {
+    public void init(HRecord config, SinkTaskContext sinkTaskContext) {
+        super.init(config, sinkTaskContext);
         this.host = cfg.getString("host");
         this.port = cfg.getInt("port");
         this.user = cfg.getString("user");
         this.password = cfg.getString("password");
-        this.target = target;
+        this.database = cfg.getString("database");
+        this.table = cfg.getString("table");
         this.conn = getConn();
     }
 
@@ -34,7 +40,7 @@ public class Postgresql implements DB {
 
         try {
             var conn = DriverManager.getConnection(
-                    "jdbc:postgresql://" + host + ":" + port + "/" + target.database,
+                    "jdbc:postgresql://" + host + ":" + port + "/" + database,
                     connectionProps);
             System.out.println("Connected to database");
             return conn;
@@ -47,7 +53,7 @@ public class Postgresql implements DB {
     public PreparedStatement getUpsertStmt(List<String> fields, List<String> keys) {
         var stmt = String.format(
                 "INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) DO UPDATE SET %s",
-                target.table,
+                table,
                 Utils.makeFields(fields),
                 Utils.makeValues(fields.size()),
                 Utils.makeFields(keys),
@@ -63,7 +69,7 @@ public class Postgresql implements DB {
 
     @Override
     public PreparedStatement getDeleteStmt(List<String> keys) {
-        var stmt = String.format("delete from %s where %s", target.table, Utils.makeWhere(keys));
+        var stmt = String.format("delete from %s where %s", table, Utils.makeWhere(keys));
         System.out.println("delete stmt:" + stmt);
         try {
             return conn.prepareStatement(stmt);
@@ -73,7 +79,7 @@ public class Postgresql implements DB {
     }
 
     @Override
-    public void close() {
+    public void stop() {
         try {
             conn.close();
         } catch (SQLException e) {
@@ -83,5 +89,14 @@ public class Postgresql implements DB {
 
     String makeUpsertUpdate(List<String> fields) {
         return fields.stream().map(s -> String.format("%s=EXCLUDED.%s", s, s)).collect(Collectors.joining(", "));
+    }
+
+    @Override
+    public String spec() {
+        return io.hstream.io.Utils.getSpec(this, "/sink_mysql_spec.json");
+    }
+
+    public static void main(String[] args) {
+        new TaskRunner().run(args, new PostgresqlSinkTask(), new SinkTaskContextImpl());
     }
 }

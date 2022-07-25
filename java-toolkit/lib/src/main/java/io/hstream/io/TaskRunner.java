@@ -138,9 +138,8 @@ public class TaskRunner {
 
     void parseConfig(String cfgPath) {
         logger.info("config file path:{}", cfgPath);
-        String cfgText = null;
         try {
-            cfgText = Files.readString(Paths.get(cfgPath));
+            var cfgText = Files.readString(Paths.get(cfgPath));
             this.cfg = HRecord.newBuilder().merge(cfgText).build();
             this.cfgNode = new ObjectMapper().readTree(cfgText);
         } catch (IOException e) {

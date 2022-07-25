@@ -10,9 +10,13 @@ import java.util.List;
 
 public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> {
     SourceTaskContext ctx;
+    String serverName;
+    String stream;
 
-    public RecordConsumer(SourceTaskContext ctx) {
+    public RecordConsumer(SourceTaskContext ctx, String serverName, String stream) {
         this.ctx = ctx;
+        this.serverName = serverName;
+        this.stream = stream;
     }
 
     @Override
@@ -22,6 +26,10 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
             System.out.println("key:" + r.key());
             System.out.println("val:" + r.value());
             System.out.println("dst:" + r.destination());
+            // ignore ddl events
+            if (r.destination().equals(serverName)) {
+                continue;
+            }
             if (r.key() == null) {
                 continue;
             }
@@ -53,6 +61,6 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
         var hRecord = hRecordBuilder.build();
         System.out.println("hRecord:" + hRecord.toJsonString());
         var r = Record.newBuilder().hRecord(hRecord).build();
-        return new SourceRecord(record.destination(), r);
+        return new SourceRecord(stream, r);
     }
 }

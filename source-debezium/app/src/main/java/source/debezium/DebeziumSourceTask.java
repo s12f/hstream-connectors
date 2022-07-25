@@ -10,6 +10,7 @@ import io.debezium.engine.format.Json;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
+import io.hstream.io.TaskRunner;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -17,9 +18,10 @@ import java.util.Objects;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 
-class DebeziumSourceTask implements SourceTask {
+abstract class DebeziumSourceTask implements SourceTask {
     DebeziumEngine<ChangeEvent<String, String>> engine;
     SourceTaskContext ctx;
+    Properties props;
 
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
@@ -29,7 +31,6 @@ class DebeziumSourceTask implements SourceTask {
             throw new RuntimeException(e);
         }
         this.ctx = ctx;
-        var props = new Properties();
         props.setProperty("name", "engine");
         OffsetBackingStore.setKvStore(ctx.getKvStore());
         props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
@@ -41,32 +42,18 @@ class DebeziumSourceTask implements SourceTask {
         props.setProperty("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         props.setProperty("value.converter.schemas.enable", "false");
 
-        var source = cfg.getString("source");
-        switch (source) {
-            case "mysql":
-                props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector");
-                break;
-            case "postgresql":
-                props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
-                break;
-            case "sqlserver":
-                props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector");
-                break;
-            default:
-                throw new RuntimeException("unknown source:" + source);
-        }
-        if (List.of("mysql", "postgresql", "sqlserver").contains(source)) {
-            props.setProperty("database.hostname", cfg.getString("host"));
-            props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
-            props.setProperty("database.user", cfg.getString("user"));
-            props.setProperty("database.password", cfg.getString("password"));
-        }
+        props.setProperty("database.hostname", cfg.getString("host"));
+        props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
+        props.setProperty("database.user", cfg.getString("user"));
+        props.setProperty("database.password", cfg.getString("password"));
 
-//        props.setProperty("database.server.id", "85744");
-        var namespace = cfg.getString("source");
-        if (cfg.contains("namespace")) {
-            namespace = cfg.getString("namespace");
-        }
+        var table = cfg.getString("table");
+        props.setProperty("table.include.list", table);
+
+        var namespace = "debezium";
+//        if (cfg.contains("namespace")) {
+//            namespace = cfg.getString("namespace");
+//        }
         props.setProperty("database.server.name", namespace);
         DatabaseHistory.setKv(ctx.getKvStore());
         props.setProperty("database.history", "source.debezium.DatabaseHistory");
@@ -80,20 +67,10 @@ class DebeziumSourceTask implements SourceTask {
         engine = DebeziumEngine.create(Json.class)
                 .using(props)
                 .using(OffsetCommitPolicy.always())
-                .notifying(new RecordConsumer(ctx))
+                .notifying(new RecordConsumer(ctx, namespace, cfg.getString("stream")))
                 .build();
 
         engine.run();
-    }
-
-    @Override
-    public String spec() {
-        try {
-            var data = Objects.requireNonNull(getClass().getResourceAsStream("/spec.json")).readAllBytes();
-            return new String(data, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

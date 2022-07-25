@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source-postgresql",
+  "description": "the configuration specification of source-postgresql",
+  "type": "object",
+  "properties": {
+    "user": {
+      "title": "User Name",
+      "description": "postgresql user name",
+      "type": "string"
+    },
+    "password": {
+      "title": "Password",
+      "description": "password of the user",
+      "type": "string"
+    },
+    "host": {
+      "title": "Hostname",
+      "description": "postgresql hostname",
+      "type": "string",
+      "examples": ["127.0.0.1"]
+    },
+    "port": {
+      "title": "Port Number",
+      "description": "postgresql port number",
+      "type": "integer",
+      "examples": [5432]
+    },
+    "database": {
+      "title": "Database Name",
+      "description": "postgresql database name",
+      "type": "string"
+    },
+    "table": {
+      "title": "Table Name",
+      "description": "table name of the database",
+      "type": "string",
+      "examples": ["t1", "public.t1"]
+    },
+    "stream": {
+      "title": "stream name",
+      "description": "the target HStream stream name",
+      "type": "string"
+    }
+  },
+  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+}
