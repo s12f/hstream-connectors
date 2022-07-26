@@ -38,9 +38,25 @@ dependencies {
 
 }
 
-application {
-    // Define the main class for the application.
-    mainClass = 'source.debezium.Main'
+task buildMysqlImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstream/source-mysql"
+}
+
+task buildPostgresqlImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstream/source-postgresql"
+}
+
+task buildSqlserverImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/SqlserverDockerfile", "-t", "hstream/source-sqlserver"
+}
+
+task buildImages {
+    dependsOn(buildMysqlImage)
+    dependsOn(buildPostgresqlImage)
+    dependsOn(buildSqlserverImage)
 }
 
 tasks.named('test') {

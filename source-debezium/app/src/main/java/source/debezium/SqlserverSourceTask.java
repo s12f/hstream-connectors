@@ -12,6 +12,7 @@ public class SqlserverSourceTask extends DebeziumSourceTask {
         var table = cfg.getString("table");
         props.setProperty("database.dbname", dbname);
         props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector");
+        props.setProperty("table.include.list", table);
         if (table.split("\\.").length == 1) {
             props.setProperty("table.include.list", "dbo." + table);
         }
