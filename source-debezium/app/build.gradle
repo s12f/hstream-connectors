@@ -40,17 +40,17 @@ dependencies {
 
 task buildMysqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstream/source-mysql"
+    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstreamdb/connector:source-mysql"
 }
 
 task buildPostgresqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstream/source-postgresql"
+    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstreamdb/connector:source-postgresql"
 }
 
 task buildSqlserverImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/SqlserverDockerfile", "-t", "hstream/source-sqlserver"
+    commandLine "docker", "build", "..", "-f", "../docker/SqlserverDockerfile", "-t", "hstreamdb/connector:source-sqlserver"
 }
 
 task buildImages {
