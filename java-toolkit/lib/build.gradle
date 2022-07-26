@@ -16,6 +16,9 @@ repositories {
     // Use Maven Central for resolving dependencies.
     // mavenLocal()
     mavenCentral()
+    maven {
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    }
 }
 
 java {
