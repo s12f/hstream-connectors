@@ -37,12 +37,12 @@ dependencies {
 
 task buildMysqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstream/sink-mysql"
+    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstreamdb/connector:sink-mysql"
 }
 
 task buildPostgresqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstream/sink-postgresql"
+    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstreamdb/connector:sink-postgresql"
 }
 
 task buildImages {
