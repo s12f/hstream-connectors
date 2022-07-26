@@ -35,9 +35,19 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.4.0'
 }
 
-application {
-    // Define the main class for the application.
-    mainClass = 'sink.jdbc.App'
+task buildMysqlImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstream/sink-mysql"
+}
+
+task buildPostgresqlImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstream/sink-postgresql"
+}
+
+task buildImages {
+    dependsOn(buildMysqlImage)
+    dependsOn(buildPostgresqlImage)
 }
 
 tasks.named('test') {

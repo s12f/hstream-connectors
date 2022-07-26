@@ -17,11 +17,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
+import java.util.UUID;
 
 abstract class DebeziumSourceTask implements SourceTask {
     DebeziumEngine<ChangeEvent<String, String>> engine;
     SourceTaskContext ctx;
-    Properties props;
+    Properties props = new Properties();
 
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
@@ -47,10 +48,7 @@ abstract class DebeziumSourceTask implements SourceTask {
         props.setProperty("database.user", cfg.getString("user"));
         props.setProperty("database.password", cfg.getString("password"));
 
-        var table = cfg.getString("table");
-        props.setProperty("table.include.list", table);
-
-        var namespace = "debezium";
+        var namespace = UUID.randomUUID().toString().replace("-", "");
 //        if (cfg.contains("namespace")) {
 //            namespace = cfg.getString("namespace");
 //        }

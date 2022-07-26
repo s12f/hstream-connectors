@@ -4,6 +4,7 @@ import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SourceTaskContextImpl;
+import java.util.UUID;
 
 public class PostgresqlSourceTask extends DebeziumSourceTask {
     @Override
@@ -12,6 +13,9 @@ public class PostgresqlSourceTask extends DebeziumSourceTask {
         var table = cfg.getString("table");
         props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector");
         props.setProperty("database.dbname", dbname);
+        props.setProperty("table.include.list", table);
+        props.setProperty("plugin.name", "pgoutput");
+        props.setProperty("slot.name", "hstream_" + UUID.randomUUID().toString().replace("-", ""));
         if (table.split("\\.").length == 1) {
             props.setProperty("table.include.list", "public." + table);
         }

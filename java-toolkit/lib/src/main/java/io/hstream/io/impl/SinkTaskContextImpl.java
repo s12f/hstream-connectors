@@ -36,7 +36,11 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         var streams = List.of(cCfg.getString("stream"));
         for (var stream: streams) {
             var subId = "connector_sub_" + UUID.randomUUID();
-            var sub = Subscription.newBuilder().stream(stream).subscription(subId).build();
+            var sub = Subscription.newBuilder().
+                    stream(stream)
+                    .subscription(subId)
+                    .offset(Subscription.SubscriptionOffset.EARLEST)
+                    .build();
             client.createSubscription(sub);
             consumers.add(client.newConsumer()
                     .subscription(subId)
