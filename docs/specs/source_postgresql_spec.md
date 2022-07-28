@@ -104,4 +104,4 @@
 **Description:** the target HStream stream name
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-22 at 18:13:26 +0800
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-28 at 16:40:56 +0800

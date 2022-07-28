@@ -1,18 +1,18 @@
-# source-sqlserver
+# source-mysql
 
-**Title:** source-sqlserver
+**Title:** source-mysql
 
 | Type                      | `object`                                                                  |
 | ------------------------- | ------------------------------------------------------------------------- |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
-**Description:** the configuration specification of source-sqlserver
+**Description:** the configuration specification of source-mysql
 
 | Property                 | Pattern | Type    | Deprecated | Definition | Title/Description |
 | ------------------------ | ------- | ------- | ---------- | ---------- | ----------------- |
-| + [user](#user )         | No      | string  | No         | -          | user name         |
-| + [password](#password ) | No      | string  | No         | -          | password          |
-| + [host](#host )         | No      | string  | No         | -          | Hostname          |
+| + [user](#user )         | No      | string  | No         | -          | User Name         |
+| + [password](#password ) | No      | string  | No         | -          | Password          |
+| + [host](#host )         | No      | string  | No         | -          | mysql hostname    |
 | + [port](#port )         | No      | integer | No         | -          | Port Number       |
 | + [database](#database ) | No      | string  | No         | -          | Database Name     |
 | + [table](#table )       | No      | string  | No         | -          | Table Name        |
@@ -20,30 +20,38 @@
 
 ## <a name="user"></a>1. [Required] Property `user`
 
-**Title:** user name
+**Title:** User Name
 
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** sqlserver user name
+**Description:** mysql user name
 
 ## <a name="password"></a>2. [Required] Property `password`
 
-**Title:** password
+**Title:** Password
 
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** sqlserver password
+**Description:** password of the user
 
 ## <a name="host"></a>3. [Required] Property `host`
 
-**Title:** Hostname
-
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** sqlserver hostname
+**Description:** mysql hostname
+
+**Examples:** 
+
+```json
+"127.0.0.1"
+```
+
+```json
+"localhost"
+```
 
 ## <a name="port"></a>4. [Required] Property `port`
 
@@ -52,12 +60,12 @@
 | Type | `integer` |
 | ---- | --------- |
 
-**Description:** sqlserver port number
+**Description:** mysql port number
 
 **Example:** 
 
 ```json
-1433
+3306
 ```
 
 ## <a name="database"></a>5. [Required] Property `database`
@@ -67,7 +75,7 @@
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** sqlserver database name
+**Description:** mysql database name
 
 ## <a name="table"></a>6. [Required] Property `table`
 
@@ -85,7 +93,7 @@
 ```
 
 ```json
-"dbo.t1"
+"public.t1"
 ```
 
 ## <a name="stream"></a>7. [Required] Property `stream`
@@ -98,4 +106,4 @@
 **Description:** the target HStream stream name
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-22 at 18:13:26 +0800
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-28 at 16:40:56 +0800
