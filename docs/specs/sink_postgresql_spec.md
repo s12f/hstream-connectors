@@ -1,19 +1,19 @@
-# sink-mysql
+# sink-postgresql
 
-**Title:** sink-mysql
+**Title:** sink-postgresql
 
 | Type                      | `object`                                                                  |
 | ------------------------- | ------------------------------------------------------------------------- |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
-**Description:** the configuration specification of sink-mysql
+**Description:** the configuration specification of sink-postgresql
 
 | Property                 | Pattern | Type    | Deprecated | Definition | Title/Description          |
 | ------------------------ | ------- | ------- | ---------- | ---------- | -------------------------- |
-| + [user](#user )         | No      | string  | No         | -          | mysql user                 |
-| + [password](#password ) | No      | string  | No         | -          | mysql password             |
-| + [host](#host )         | No      | string  | No         | -          | mysql hostname             |
-| + [port](#port )         | No      | integer | No         | -          | mysql port                 |
+| + [user](#user )         | No      | string  | No         | -          | postgresql user            |
+| + [password](#password ) | No      | string  | No         | -          | postgresql password        |
+| + [host](#host )         | No      | string  | No         | -          | postgresql hostname        |
+| + [port](#port )         | No      | integer | No         | -          | postgresql port            |
 | + [stream](#stream )     | No      | string  | No         | -          | source HStream stream name |
 | + [database](#database ) | No      | string  | No         | -          | target database name       |
 | + [table](#table )       | No      | string  | No         | -          | table name of the database |
@@ -23,28 +23,28 @@
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** mysql user
+**Description:** postgresql user
 
 ## <a name="password"></a>2. [Required] Property `password`
 
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** mysql password
+**Description:** postgresql password
 
 ## <a name="host"></a>3. [Required] Property `host`
 
 | Type | `string` |
 | ---- | -------- |
 
-**Description:** mysql hostname
+**Description:** postgresql hostname
 
 ## <a name="port"></a>4. [Required] Property `port`
 
 | Type | `integer` |
 | ---- | --------- |
 
-**Description:** mysql port
+**Description:** postgresql port
 
 ## <a name="stream"></a>5. [Required] Property `stream`
 
@@ -68,4 +68,4 @@
 **Description:** table name of the database
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-22 at 18:13:26 +0800
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-07-28 at 16:40:57 +0800
