@@ -39,7 +39,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             var sub = Subscription.newBuilder().
                     stream(stream)
                     .subscription(subId)
-                    .offset(Subscription.SubscriptionOffset.EARLEST)
+                    .offset(Subscription.SubscriptionOffset.EARLIEST)
                     .build();
             client.createSubscription(sub);
             consumers.add(client.newConsumer()
