@@ -1,0 +1,5 @@
+hstreamdb/source-mysql:latest
+hstreamdb/source-postgresql:latest
+hstreamdb/source-sqlserver:latest
+hstreamdb/sink-mysql:latest
+hstreamdb/sink-postgresql:latest
