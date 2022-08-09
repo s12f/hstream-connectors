@@ -1,4 +1,4 @@
-name: Publish
+name: CI
 
 on:
   pull_request:
@@ -31,3 +31,8 @@ jobs:
           ./gradlew buildImages
           cd ../sink-jdbc
           ./gradlew buildImages
+
+      - name: test
+        run: |
+          cd integration_tests
+          ./gradlew test
