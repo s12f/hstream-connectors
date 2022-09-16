@@ -31,6 +31,8 @@ jobs:
           ./gradlew buildImages
           cd ../sink-jdbc
           ./gradlew buildImages
+          cd ../sink-mongodb
+          ./gradlew buildImages
 
       - name: test
         run: |

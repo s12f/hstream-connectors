@@ -1,5 +1,7 @@
 package io.hstream;
 
+import com.google.protobuf.Struct;
+import io.hstream.internal.CommandQuery;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -11,16 +13,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+@Slf4j
 public class Utils {
-    static Logger logger = LoggerFactory.getLogger(Utils.class);
-
     static String mysqlRootPassword = "password";
     static String postgresPassword = "postgres";
     static String docker_compose_path = Objects.requireNonNull(Utils.class.getResource("/docker-compose.yaml")).getPath();
@@ -39,12 +38,18 @@ public class Utils {
                 .waitingFor(Wait.forListeningPort());
     }
 
+    public static GenericContainer<?> makeMongodb() {
+        return new GenericContainer<>("mongo")
+                .withExposedPorts(27017)
+                .waitingFor(Wait.forListeningPort());
+    }
+
     static DockerComposeContainer<?> makeHStreamDB() throws Exception {
         return new DockerComposeContainer<>(new File(docker_compose_path))
                 .withExposedService("hserver0", 6570)
                 .withExposedService("hserver1", 6572)
-                .withLogConsumer("hserver0", outputFrame -> logger.debug(outputFrame.getUtf8String()))
-                .withLogConsumer("hserver1", outputFrame -> logger.debug(outputFrame.getUtf8String()))
+                .withLogConsumer("hserver0", outputFrame -> log.info(outputFrame.getUtf8String()))
+                .withLogConsumer("hserver1", outputFrame -> log.info(outputFrame.getUtf8String()))
                 .waitingFor("hserver0", Wait.forListeningPort());
     }
 
