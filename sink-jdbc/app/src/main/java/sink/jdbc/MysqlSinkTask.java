@@ -1,5 +1,6 @@
 package sink.jdbc;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
 import io.hstream.io.SinkTaskContext;
 import io.hstream.io.TaskRunner;
@@ -21,8 +22,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
     Connection conn;
 
     @Override
-    public void init(HRecord config, SinkTaskContext sinkTaskContext) {
-        super.init(config, sinkTaskContext);
+    public void init(HRecord cfg) {
         this.user = cfg.getString("user");
         this.password = cfg.getString("password");
         this.host = cfg.getString("host");
@@ -85,7 +85,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
     }
 
     @Override
-    public String spec() {
+    public JsonNode spec() {
         return io.hstream.io.Utils.getSpec(this, "/sink_mysql_spec.json");
     }
 

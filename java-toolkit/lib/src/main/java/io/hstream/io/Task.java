@@ -1,12 +1,10 @@
 package io.hstream.io;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 public interface Task {
-    String spec();
+    JsonNode spec();
     default void check(HRecord config) {}
     void stop();
 }

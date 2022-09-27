@@ -1,11 +1,9 @@
 package sink.mongodb;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.ReplaceOneModel;
-import com.mongodb.client.model.ReplaceOptions;
-import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import io.hstream.HRecord;
@@ -15,20 +13,17 @@ import io.hstream.io.SinkTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.Utils;
 import io.hstream.io.impl.SinkTaskContextImpl;
-import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
 @Slf4j
 public class MongodbSinkTask implements SinkTask {
-    HRecord cfg;
     MongoClient client;
     MongoCollection<Document> collection;
 
     @Override
-    public void init(HRecord cfg, SinkTaskContext sinkTaskContext) {
-        this.cfg = cfg;
+    public void run(HRecord cfg, SinkTaskContext ctx) {
         var hosts = cfg.getString("hosts");
         var dbStr = cfg.getString("database");
         var collectionStr = cfg.getString("collection");
@@ -42,16 +37,14 @@ public class MongodbSinkTask implements SinkTask {
         client = MongoClients.create(connStr);
         var db = client.getDatabase(dbStr);
         collection = db.getCollection(collectionStr);
+        ctx.handle((stream, records) -> {
+            var result = collection.bulkWrite(records.stream().map(this::mapRecord).collect(Collectors.toList()));
+            log.debug("bulkWrite result:{} from steram:{}", result, stream);
+        });
     }
 
     @Override
-    public void send(String s, List<SinkRecord> records) {
-        var result = collection.bulkWrite(records.stream().map(this::mapRecord).collect(Collectors.toList()));
-        log.info("bulkWrite result:{}", result);
-    }
-
-    @Override
-    public String spec() {
+    public JsonNode spec() {
         return Utils.getSpec(this, "/spec.json");
     }
 
@@ -64,7 +57,7 @@ public class MongodbSinkTask implements SinkTask {
         var record = sinkRecord.record;
         var keyDoc = Document.parse(record.getHRecord("key").toCompactJsonString());
         var valDoc = Document.parse(record.getHRecord("value").toCompactJsonString());
-        log.info("keyDoc:{}, valDoc:{}", keyDoc, valDoc);
+        log.debug("keyDoc:{}, valDoc:{}", keyDoc, valDoc);
         return new UpdateOneModel<>(keyDoc,
                 new Document("$set", valDoc),
                 new UpdateOptions().upsert(true));

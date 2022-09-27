@@ -1,14 +1,14 @@
 package io.hstream.io;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class Utils {
-    public static String getSpec(Task task, String specPath) {
+    public static JsonNode getSpec(Task task, String specPath) {
         try {
-            var data = Objects.requireNonNull(task.getClass().getResourceAsStream(specPath)).readAllBytes();
-            return new String(data, StandardCharsets.UTF_8);
+            return new ObjectMapper().readTree(Objects.requireNonNull(task.getClass().getResourceAsStream(specPath)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,9 +1,8 @@
 package io.hstream.io;
 
-import io.hstream.HRecord;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public interface SinkTaskContext extends TaskContext {
-    void init(HRecord config, SinkTask sinkTask);
-    void run();
+    void handle(BiConsumer<String, List<SinkRecord>> handler);
 }

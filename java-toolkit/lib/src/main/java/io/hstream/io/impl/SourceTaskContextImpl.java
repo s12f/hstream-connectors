@@ -16,10 +16,10 @@ public class SourceTaskContextImpl implements SourceTaskContext {
     KvStore kvStore;
 
     @Override
-    public void init(HRecord cfg) {
+    public void init(HRecord cfg, KvStore kv) {
         var hsCfg = cfg.getHRecord("hstream");
+        this.kvStore = kv;
         client = HStreamClient.builder().serviceUrl(hsCfg.getString("serviceUrl")).build();
-        kvStore = Utils.makeKvStoreFromConfig(cfg);
     }
 
     @Override

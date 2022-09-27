@@ -47,6 +47,11 @@ dependencies {
     implementation 'io.debezium:debezium-embedded:1.9.3.Final'
     implementation 'org.apache.zookeeper:zookeeper:3.8.0'
     implementation 'com.networknt:json-schema-validator:1.0.71'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
 
 publishing {

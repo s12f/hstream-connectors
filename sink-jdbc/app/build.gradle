@@ -13,8 +13,8 @@ plugins {
 
 repositories {
     // Use Maven Central for resolving dependencies.
-    mavenLocal()
     mavenCentral()
+    mavenLocal()
     maven {
         url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
     }
@@ -36,6 +36,13 @@ dependencies {
     // jdbc
     implementation 'mysql:mysql-connector-java:8.0.29'
     implementation 'org.postgresql:postgresql:42.4.0'
+
+    // jsonNode
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
 
 task buildMysqlImage(type: Exec) {

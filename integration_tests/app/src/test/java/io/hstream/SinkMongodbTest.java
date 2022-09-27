@@ -39,7 +39,7 @@ public class SinkMongodbTest {
         mongoClient = MongoClients.create(connStr);
         var db = mongoClient.getDatabase(dbStr);
         collection = db.getCollection(collectionStr);
-        log.info("connected:{}", collection.find().iterator().hasNext());
+//        log.info("connected:{}", collection.find().iterator().hasNext());
         log.info("set up environment");
     }
 

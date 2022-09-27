@@ -1,21 +1,18 @@
 package io.hstream.io.impl;
 
-import com.google.common.util.concurrent.Service;
 import io.hstream.Consumer;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
 import io.hstream.Subscription;
 import io.hstream.io.KvStore;
 import io.hstream.io.SinkRecord;
-import io.hstream.io.SinkTask;
 import io.hstream.io.SinkTaskContext;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 public class SinkTaskContextImpl implements SinkTaskContext {
     HRecord cfg;
-    SinkTask sinkTask;
     HStreamClient client;
     Consumer consumer;
     KvStore kv;
@@ -26,15 +23,22 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     }
 
     @Override
-    public void init(HRecord config, SinkTask sinkTask) {
+    public void init(HRecord config, KvStore kv) {
         this.cfg = config;
-        this.sinkTask = sinkTask;
-        var hsCfg = config.getHRecord("hstream");
+        this.kv = kv;
+    }
+
+    private SinkRecord makeSinkRecord(HRecord record) {
+        return new SinkRecord(record);
+    }
+
+    @Override
+    public void handle(BiConsumer<String, List<SinkRecord>> handler) {
+        var hsCfg = cfg.getHRecord("hstream");
         client = HStreamClient.builder().serviceUrl(hsCfg.getString("serviceUrl")).build();
-        kv = Utils.makeKvStoreFromConfig(cfg);
         var cCfg = cfg.getHRecord("connector");
         var stream = cCfg.getString("stream");
-        var subId = kv.get("hstream_subscription_id");
+        var subId = kv.get("hstream_subscription_id").join();
         if (subId == null) {
             subId = "connector_sub_" + UUID.randomUUID();
             var sub = Subscription.newBuilder().
@@ -43,25 +47,18 @@ public class SinkTaskContextImpl implements SinkTaskContext {
                     .offset(Subscription.SubscriptionOffset.EARLIEST)
                     .build();
             client.createSubscription(sub);
-            kv.set("hstream_subscription_id", subId);
+            kv.set("hstream_subscription_id", subId).join();
         }
-        consumer = client.newConsumer()
+        this.consumer = client.newConsumer()
                 .subscription(subId)
                 .hRecordReceiver((receivedHRecord, responder) -> {
                     System.out.println("received:" + receivedHRecord.getHRecord().toJsonString());
-                    sinkTask.send(stream, List.of(makeSinkRecord(receivedHRecord.getHRecord())));
+                    handler.accept(stream, List.of(makeSinkRecord(receivedHRecord.getHRecord())));
                     responder.ack();
                 })
                 .build();
-    }
-
-    private SinkRecord makeSinkRecord(HRecord record) {
-        return new SinkRecord(record);
-    }
-
-    @Override
-    public void run() {
         consumer.startAsync().awaitRunning();
+        consumer.awaitTerminated();
     }
 
     @Override
