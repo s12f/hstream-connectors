@@ -3,18 +3,13 @@
  */
 package source.debezium;
 
-import com.google.protobuf.TextFormat;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
-import io.hstream.io.TaskRunner;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 import java.util.UUID;

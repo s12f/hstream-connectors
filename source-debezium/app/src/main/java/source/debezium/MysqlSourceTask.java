@@ -1,5 +1,6 @@
 package source.debezium;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
 import io.hstream.io.TaskRunner;
@@ -20,7 +21,7 @@ public class MysqlSourceTask extends DebeziumSourceTask {
     }
 
     @Override
-    public String spec() {
+    public JsonNode spec() {
         return io.hstream.io.Utils.getSpec(this, "/source_mysql_spec.json");
     }
 

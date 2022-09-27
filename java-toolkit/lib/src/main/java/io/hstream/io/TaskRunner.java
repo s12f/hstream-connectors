@@ -9,12 +9,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import io.hstream.HRecord;
+import io.hstream.io.impl.ChannelKvStore;
+import io.hstream.io.impl.StdioChannel;
+import io.hstream.io.internal.Channel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 @Parameters(
         commandNames = "spec",
@@ -48,20 +50,21 @@ class RunCmd {
     String configPath;
 }
 
+@Slf4j
 public class TaskRunner {
     TaskContext ctx;
     // for json schema verifier only
     JsonNode cfgNode;
     HRecord cfg;
     Task task;
-    Scanner scanner;
-    String taskType = "source";
-
-    Logger logger = LoggerFactory.getLogger(TaskRunner.class);
+    Channel channel;
+    KvStore kv;
 
     public void run(String[] args, Task task, TaskContext taskContext) {
         this.task = task;
         this.ctx = taskContext;
+        this.channel = new StdioChannel();
+        this.kv = new ChannelKvStore(channel);
         var checkCmd = new CheckCmd();
         var runCmd = new RunCmd();
         var jc = JCommander.newBuilder()
@@ -72,13 +75,13 @@ public class TaskRunner {
         try {
             jc.parse(args);
         } catch (ParameterException e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             jc.usage();
             System.exit(1);
         }
         switch (jc.getParsedCommand()) {
             case "spec":
-                send(task.spec());
+                channel.send(task.spec());
                 break;
             case "check":
                 parseConfig(checkCmd.configPath);
@@ -86,58 +89,53 @@ public class TaskRunner {
                 break;
             case "run":
                 parseConfig(runCmd.configPath);
-
-                scanner = new Scanner(System.in);
                 new Thread(this::recvCmd).start();
-
                 var connectorConfig = cfg.getHRecord("connector");
                 try {
                     parseConfig(runCmd.configPath);
+                    ctx.init(cfg, kv);
                     if (task instanceof SourceTask) {
                         var st = (SourceTask) task;
                         var stc = (SourceTaskContext) taskContext;
-                        stc.init(cfg);
                         st.run(connectorConfig, stc);
                     } else {
                         var st = (SinkTask) task;
                         var stc = (SinkTaskContext) taskContext;
-                        stc.init(cfg, st);
-                        st.init(connectorConfig, stc);
-                        stc.run();
+                        st.run(connectorConfig, stc);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info("unexpected error when running connector:{}", e.getMessage());
+                    e.printStackTrace(System.out);
                     stop();
                 }
                 break;
             default:
-                logger.error("invalid cmd:{}", jc.getParsedCommand());
+                log.error("invalid cmd:{}", jc.getParsedCommand());
         }
     }
 
     void check(Task task) {
         var schema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(task.spec());
         var errors = schema.validate(cfgNode.get("connector"));
+        var mapper = new ObjectMapper();
         if (errors.size() == 0) {
-            var msg = HRecord.newBuilder()
+            var msg = mapper.createObjectNode()
                     .put("result", true)
-                    .put("message", "ok")
-                    .build()
-                    .toCompactJsonString();
-            send(msg);
+                    .put("message", "ok");
+            System.out.println(msg);
+//            channel.send(msg);
         } else {
-            logger.info("check failed:{}", errors);
-            var msg = HRecord.newBuilder()
+            log.info("check failed:{}", errors);
+            var msg = mapper.createObjectNode()
                     .put("result", false)
-                    .put("message", "config check failed:" + errors)
-                    .build()
-                    .toCompactJsonString();
-            send(msg);
+                    .put("message", "config check failed:" + errors);
+            System.out.println(msg);
+//            channel.send(msg);
         }
     }
 
     void parseConfig(String cfgPath) {
-        logger.info("config file path:{}", cfgPath);
+        log.info("config file path:{}", cfgPath);
         try {
             var cfgText = Files.readString(Paths.get(cfgPath));
             this.cfg = HRecord.newBuilder().merge(cfgText).build();
@@ -149,43 +147,31 @@ public class TaskRunner {
 
 
     public void recvCmd() {
-        logger.info("receiving commands");
-        while (true) {
-            var line = scanner.nextLine();
-            logger.info("received line:{}", line);
-            try {
-                var cmd = HRecord.newBuilder().merge(line).build();
-                var cmdType = cmd.getString("type");
-                if (cmdType.equals("stop")) {
-                    stop();
-                    break;
-                }
-            } catch (Exception e) {
-                logger.warn("received an invalid cmd:{}", line);
+        log.info("receiving commands");
+        channel.handle(msg -> {
+            var cmdType = msg.get("type").asText();
+            if (cmdType.equals("stop")) {
+                stop();
             }
-        }
-    }
-
-    void send(String msg) {
-        System.out.println(msg);
-        System.out.flush();
+        });
     }
 
     public void stop() {
-        logger.info("stopping runner");
-        scanner.close();
-        logger.info("stopped scanner");
+        log.info("stopping runner");
         if (task instanceof SourceTask) {
             task.stop();
-            logger.info("stopped task");
+            log.info("stopped source task");
             ctx.close();
-            logger.info("stopped context");
+            log.info("stopped source context");
         } else {
             ctx.close();
-            logger.info("stopped context");
+            log.info("stopped sink context");
             task.stop();
-            logger.info("stopped task");
+            log.info("stopped sink task");
         }
-        logger.info("stopped runner");
+        log.info("stopped runner");
+        try {
+            kv.close();
+        } catch (InterruptedException ignored) {}
     }
 }

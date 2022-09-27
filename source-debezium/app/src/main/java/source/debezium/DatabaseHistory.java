@@ -24,14 +24,14 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
         try {
             String line = writer.write(record.document());
             logger.info("storing record:{}", line);
-            var hc = kv.get("history_count");
+            var hc = kv.get("history_count").join();
             if (hc == null) {
-                kv.set("history_0", line);
-                kv.set("history_count", "1");
+                kv.set("history_0", line).join();
+                kv.set("history_count", "1").join();
             } else {
                 var hcInt = Integer.parseInt(hc);
-                kv.set("history_" + hcInt, line);
-                kv.set("history_count", String.valueOf(hcInt + 1));
+                kv.set("history_" + hcInt, line).join();
+                kv.set("history_count", String.valueOf(hcInt + 1)).join();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -40,13 +40,13 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
 
     @Override
     protected void recoverRecords(Consumer<HistoryRecord> records) {
-        var hc = kv.get("history_count");
+        var hc = kv.get("history_count").join();
         if (hc == null) {
             logger.info("history_count is null");
             return;
         }
         for (int i = 0; i < Integer.parseInt(hc); i++) {
-            var val = kv.get("history_" + i);
+            var val = kv.get("history_" + i).join();
             try {
                 records.accept(new HistoryRecord(reader.read(val)));
             } catch (IOException e) {
@@ -60,7 +60,7 @@ public class DatabaseHistory extends AbstractDatabaseHistory {
         if (!storageExists()) {
             return false;
         }
-        return kv.get("history_count") != null;
+        return kv.get("history_count").join() != null;
     }
 
     @Override

@@ -15,30 +15,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 abstract public class JdbcSinkTask implements SinkTask {
-    HRecord cfg;
-    SinkTaskContext ctx;
-
     @Override
-    public void init(HRecord config, SinkTaskContext sinkTaskContext) {
-        this.cfg = config;
-        this.ctx = sinkTaskContext;
-    }
-
-    @Override
-    public void send(String target, List<SinkRecord> records) {
-        for (var record : records) {
-            var m = record.record.getDelegate().getFieldsMap();
-            try {
-                if (m.get("value").hasNullValue()) {
-                    delete(List.of(record));
-                } else {
-                    upsert(List.of(record));
+    public void run(HRecord cfg, SinkTaskContext ctx) {
+        init(cfg);
+        ctx.handle((stream, records) -> {
+            for (var record : records) {
+                var m = record.record.getDelegate().getFieldsMap();
+                try {
+                    if (m.get("value").hasNullValue()) {
+                        delete(List.of(record));
+                    } else {
+                        upsert(List.of(record));
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
-        }
+        });
     }
+
 
     void upsert(List<SinkRecord> records) throws SQLException {
         var fields = getFields(records.get(0));
@@ -104,6 +99,7 @@ abstract public class JdbcSinkTask implements SinkTask {
         return m;
     }
 
+    abstract void init(HRecord cfg);
     abstract PreparedStatement getUpsertStmt(List<String> fields, List<String> keys);
     abstract PreparedStatement getDeleteStmt(List<String> keys);
 
