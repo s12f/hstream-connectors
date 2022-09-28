@@ -1,20 +1,13 @@
 package io.hstream;
 
-import com.google.protobuf.Struct;
-import io.hstream.internal.CommandQuery;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
@@ -22,8 +15,6 @@ import org.testcontainers.containers.wait.strategy.Wait;
 public class Utils {
     static String mysqlRootPassword = "password";
     static String postgresPassword = "postgres";
-    static String docker_compose_path = Objects.requireNonNull(Utils.class.getResource("/docker-compose.yaml")).getPath();
-
     public static GenericContainer<?> makeMysql() {
         return new GenericContainer<>("mysql")
                 .withEnv("MYSQL_ROOT_PASSWORD", mysqlRootPassword)
@@ -42,15 +33,6 @@ public class Utils {
         return new GenericContainer<>("mongo")
                 .withExposedPorts(27017)
                 .waitingFor(Wait.forListeningPort());
-    }
-
-    static DockerComposeContainer<?> makeHStreamDB() throws Exception {
-        return new DockerComposeContainer<>(new File(docker_compose_path))
-                .withExposedService("hserver0", 6570)
-                .withExposedService("hserver1", 6572)
-                .withLogConsumer("hserver0", outputFrame -> log.info(outputFrame.getUtf8String()))
-                .withLogConsumer("hserver1", outputFrame -> log.info(outputFrame.getUtf8String()))
-                .waitingFor("hserver0", Wait.forListeningPort());
     }
 
     public static Connection getMysqlConn(int port) {
