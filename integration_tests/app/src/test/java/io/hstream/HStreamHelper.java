@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.TestInfo;
 
 @Slf4j
 public class HStreamHelper {
@@ -19,8 +20,10 @@ public class HStreamHelper {
     public HStreamClient client;
     private final Map<Integer, ManagedChannel> channels = new HashMap<>();
     public HStreamService service;
+    public TestInfo testInfo;
 
-    HStreamHelper() throws Exception {
+    HStreamHelper(TestInfo testInfo) throws Exception {
+        this.testInfo = testInfo;
         service = new HStreamService();
         service.start();
         client = HStreamClient.builder().serviceUrl(serverHost + ":" + service.getServerPort()).build();
@@ -37,6 +40,7 @@ public class HStreamHelper {
     }
 
     void close() throws Exception {
+        service.writeLog(testInfo);
         channels.values().forEach(ManagedChannel::shutdown);
         client.close();
         service.stop();

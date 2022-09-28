@@ -45,14 +45,19 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
 
+var imageVersion = System.getenv("CONNECTOR_IMAGE_VERSION")
+if (imageVersion == null) {
+    imageVersion = "latest"
+}
+
 task buildMysqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstreamdb/sink-mysql:latest"
+    commandLine "docker", "build", "..", "-f", "../docker/MysqlDockerfile", "-t", "hstreamdb/sink-mysql:${imageVersion}"
 }
 
 task buildPostgresqlImage(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstreamdb/sink-postgresql:latest"
+    commandLine "docker", "build", "..", "-f", "../docker/PostgresqlDockerfile", "-t", "hstreamdb/sink-postgresql:${imageVersion}"
 }
 
 task buildImages {

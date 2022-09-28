@@ -44,7 +44,11 @@ dependencies {
 
 task buildImages(type: Exec) {
     dependsOn(installDist)
-    commandLine "docker", "build", "..", "-f", "../docker/Dockerfile", "-t", "hstreamdb/sink-mongodb:latest"
+    var imageVersion = System.getenv("CONNECTOR_IMAGE_VERSION")
+    if (imageVersion == null) {
+        imageVersion = "latest"
+    }
+    commandLine "docker", "build", "..", "-f", "../docker/Dockerfile", "-t", "hstreamdb/sink-mongodb:${imageVersion}"
 }
 
 application {
