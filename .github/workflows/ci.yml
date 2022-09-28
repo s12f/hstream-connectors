@@ -26,13 +26,7 @@ jobs:
         run: ./gradlew publishToMavenLocal -PdisableSigning --info
 
       - name: build images
-        run: |
-          cd source-debezium
-          ./gradlew buildImages
-          cd ../sink-jdbc
-          ./gradlew buildImages
-          cd ../sink-mongodb
-          ./gradlew buildImages
+        run: ./scripts/build_images.sh
 
       - name: test
         run: |

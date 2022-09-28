@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.testcontainers.containers.GenericContainer;
 
 @Slf4j
@@ -27,8 +28,8 @@ public class SinkMongodbTest {
     String collectionStr = "t1";
 
     @BeforeEach
-    void setup() throws Exception {
-        helper = new HStreamHelper();
+    void setup(TestInfo testInfo) throws Exception {
+        helper = new HStreamHelper(testInfo);
         mongodb = Utils.makeMongodb();
         mongodb.start();
         log.info("Exposed ports:{}, mapping Port:{}", mongodb.getExposedPorts(), mongodb.getFirstMappedPort());

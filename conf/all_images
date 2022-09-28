@@ -1,6 +1,6 @@
-hstreamdb/source-mysql:latest
-hstreamdb/source-postgresql:latest
-hstreamdb/source-sqlserver:latest
-hstreamdb/sink-mysql:latest
-hstreamdb/sink-postgresql:latest
-hstreamdb/sink-mongodb:latest
+hstreamdb/source-mysql
+hstreamdb/source-postgresql
+hstreamdb/source-sqlserver
+hstreamdb/sink-mysql
+hstreamdb/sink-postgresql
+hstreamdb/sink-mongodb

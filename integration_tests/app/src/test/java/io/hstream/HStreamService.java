@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -101,4 +103,14 @@ public class HStreamService {
     int getServerPort() {
         return 6570;
     }
+
+    void writeLog(TestInfo testInfo) throws Exception {
+        String dirFromProject = ".logs/" + testInfo.getTestClass().get().getName() + "/" + testInfo.getTestMethod().get().getName();
+        log.info("log to " + dirFromProject);
+        String dir = "../" + dirFromProject;
+        String fileName = dir + "/server.log";
+        Files.createDirectories(Path.of(dir));
+        Files.writeString(Path.of(fileName), server.getLogs());
+    }
+
 }

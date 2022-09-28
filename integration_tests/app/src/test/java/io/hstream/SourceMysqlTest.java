@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.testcontainers.containers.GenericContainer;
 
 class SourceMysqlTest {
@@ -19,9 +20,9 @@ class SourceMysqlTest {
     HStreamHelper helper;
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup(TestInfo testInfo) throws Exception {
         // setup HStreamDB
-        helper = new HStreamHelper();
+        helper = new HStreamHelper(testInfo);
         // setup mysql
         mysql = Utils.makeMysql();
         mysql.start();
