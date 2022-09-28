@@ -3,43 +3,25 @@
  */
 package io.hstream;
 
-import com.google.protobuf.Struct;
-import io.grpc.ManagedChannelBuilder;
-import io.hstream.internal.CommandQuery;
-import io.hstream.internal.HStreamApiGrpc;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.GenericContainer;
 
 class SourceMysqlTest {
     GenericContainer<?> mysql;
     Connection conn;
-    String serverHost = "127.0.0.1";
-    int serverPort;
-    HStreamApiGrpc.HStreamApiBlockingStub stub;
-    HStreamClient client;
-    DockerComposeContainer<?> service;
+    HStreamHelper helper;
 
     @BeforeEach
     void setup() throws Exception {
         // setup HStreamDB
-        service = Utils.makeHStreamDB();
-        service.start();
-        serverPort = service.getServicePort("hserver0", 6570);
-        client = HStreamClient.builder().serviceUrl(serverHost + ":" + serverPort).build();
-        var channel =
-                ManagedChannelBuilder.forAddress(serverHost, serverPort).usePlaintext().build();
-        stub = HStreamApiGrpc.newBlockingStub(channel);
-        System.out.println("HStreamDB started");
-
+        helper = new HStreamHelper();
         // setup mysql
         mysql = Utils.makeMysql();
         mysql.start();
@@ -52,22 +34,13 @@ class SourceMysqlTest {
     @AfterEach
     void tearDown() throws Exception {
         mysql.stop();
-        service.stop();
+        helper.close();
     }
 
     void prepareTable() throws SQLException {
         var stmt = conn.createStatement();
         stmt.execute("create database d1");
         stmt.execute("create table d1.person (id int primary key, name varchar(256), age int)");
-    }
-
-    void executeStmt(String stmt) throws SQLException {
-        conn.createStatement().execute(stmt);
-    }
-
-    List<Struct> executeHStreamSql(String sql) {
-        var cmdQuery = CommandQuery.newBuilder().setStmtText(sql).build();
-        return stub.executeQuery(cmdQuery).getResultSetList();
     }
 
     void createSourceConnector() throws UnknownHostException {
@@ -80,7 +53,7 @@ class SourceMysqlTest {
                 "\"database\" = \"d1\"," +
                 "\"table\" = \"person\"," +
                 "\"stream\" = \"s01\");";
-        executeHStreamSql(sql);
+        helper.createConnector("ss01", sql);
     }
 
     @Test
@@ -94,11 +67,11 @@ class SourceMysqlTest {
         System.out.println("prepared data");
         createSourceConnector();
         Thread.sleep(5000);
-        var result = executeHStreamSql("show connectors;");
+        var result = helper.listConnectors();
         Assertions.assertEquals(result.size(), 1);
         // check the stream
-        var res = Utils.readStream(client, "s01", 5);
+        var res = Utils.readStream(helper.client, "s01", 5);
         Assertions.assertEquals(1, res.size());
-        executeHStreamSql("drop connector ss01;");
+        helper.deleteConnector("ss01");
     }
 }
