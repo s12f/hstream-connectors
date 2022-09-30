@@ -73,13 +73,11 @@ public class HStreamService {
     }
 
     public GenericContainer<?> makeServer(Path dataDir) {
-        var configPath = Objects.requireNonNull(getClass().getResource("/hstream.yaml")).getPath();
         return new GenericContainer<>(getHStreamImageName())
                 .withNetworkMode("host")
                 .withFileSystemBind(dataDir.toAbsolutePath().toString(), "/data/hstore", BindMode.READ_ONLY)
                 .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock")
                 .withFileSystemBind("/tmp", "/tmp")
-                .withFileSystemBind(configPath, "/data/conf/hstream.yaml")
                 .withCommand(
                         "bash",
                         "-c",
@@ -94,7 +92,7 @@ public class HStreamService {
                                 + " --store-config /data/hstore/logdevice.conf"
                                 + " --store-admin-port 6440"
                                 + " --log-level debug"
-                                + " --config-path /data/conf/hstream.yaml"
+                                + " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\""
                                 + " --log-with-color"
                                 + " --store-log-level error")
                 .waitingFor(Wait.forLogMessage(".*Server is started on port.*", 1));
