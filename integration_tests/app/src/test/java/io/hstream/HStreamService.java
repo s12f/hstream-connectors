@@ -90,7 +90,7 @@ public class HStreamService {
                                 + " --address 127.0.0.1"
                                 + " --server-id 1"
                                 + " --seed-nodes 127.0.0.1:6571"
-                                + " --meta-store zk://127.0.0.1:2181"
+                                + " --meta-store-uri zk://127.0.0.1:2181"
                                 + " --store-config /data/hstore/logdevice.conf"
                                 + " --store-admin-port 6440"
                                 + " --log-level debug"
