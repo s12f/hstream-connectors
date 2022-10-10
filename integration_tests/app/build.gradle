@@ -35,6 +35,7 @@ dependencies {
     testImplementation group: 'io.grpc', name: 'grpc-stub', version: '1.45.0'
     testImplementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.45.0'
     testImplementation group: 'io.grpc', name: 'grpc-netty', version: '1.45.0'
+    testImplementation("com.google.protobuf:protobuf-java-util:3.17.3")
 
     // test containers
     testImplementation "org.testcontainers:testcontainers:1.17.3"
@@ -42,9 +43,10 @@ dependencies {
     // jdbc
     implementation 'mysql:mysql-connector-java:8.0.29'
     implementation 'org.postgresql:postgresql:42.4.0'
+    testImplementation 'org.jooq:jooq:3.16.7'
 
     // HStreamDB Java Client
-    implementation 'io.hstream:hstreamdb-java:0.10.0-SNAPSHOT'
+    testImplementation 'io.hstream:hstreamdb-java:0.10.0-SNAPSHOT'
 
     // lombok
     testCompileOnly 'org.projectlombok:lombok:1.18.24'

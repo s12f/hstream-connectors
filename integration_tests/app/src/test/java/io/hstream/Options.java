@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 public class Options {
     Map<String, Object> options = new HashMap<>();
 
-    Options put(String key, Object val) {
+    public Options put(String key, Object val) {
         options.put(key, val);
         return this;
     }

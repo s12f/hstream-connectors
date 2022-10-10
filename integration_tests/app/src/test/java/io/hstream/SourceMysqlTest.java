@@ -3,20 +3,16 @@
  */
 package io.hstream;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import io.hstream.external.Mysql;
 import java.sql.Connection;
-import java.sql.SQLException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.testcontainers.containers.GenericContainer;
 
 class SourceMysqlTest {
-    GenericContainer<?> mysql;
-    Connection conn;
+    Mysql mysql;
     HStreamHelper helper;
 
     @BeforeEach
@@ -24,55 +20,32 @@ class SourceMysqlTest {
         // setup HStreamDB
         helper = new HStreamHelper(testInfo);
         // setup mysql
-        mysql = Utils.makeMysql();
-        mysql.start();
-
-        conn = Utils.getMysqlConn(mysql.getMappedPort(3306));
-        prepareTable();
-        System.out.println("Mysql started");
+        mysql = new Mysql();
     }
 
     @AfterEach
     void tearDown() throws Exception {
-        mysql.stop();
+        mysql.close();
         helper.close();
-    }
-
-    void prepareTable() throws SQLException {
-        var stmt = conn.createStatement();
-        stmt.execute("create database d1");
-        stmt.execute("create table d1.person (id int primary key, name varchar(256), age int)");
-    }
-
-    void createSourceConnector() throws UnknownHostException {
-        var hostname = InetAddress.getLocalHost().getHostName();
-        var sql = "create source connector ss01 from mysql with" +
-                "(\"host\" = \"" + hostname + "\"," +
-                "\"port\" = " + mysql.getMappedPort(3306) + "," +
-                "\"user\" = \"root\"," +
-                "\"password\" = \"password\"," +
-                "\"database\" = \"d1\"," +
-                "\"table\" = \"person\"," +
-                "\"stream\" = \"s01\");";
-        helper.createConnector("ss01", sql);
     }
 
     @Test
     void testFullReplication() throws Exception {
         // prepared data
-        var ps = conn.prepareStatement("insert into d1.person values (?, ?, ?)");
-        ps.setObject(1, 1);
-        ps.setObject(2, "John");
-        ps.setObject(3, 20);
-        ps.execute();
-        System.out.println("prepared data");
-        createSourceConnector();
-        Thread.sleep(5000);
+        var dataSet = Utils.randomDataSetWithoutKey(10);
+        var table = "t1";
+        Utils.createTableForRandomDataSet(mysql, table);
+        mysql.writeDataSet(table, dataSet);
+        // create connector
+        var connectorName = "ss1";
+        var stream = "stream01";
+        helper.createConnector(connectorName, mysql.createSourceConnectorSql(connectorName, stream, table));
         var result = helper.listConnectors();
         Assertions.assertEquals(result.size(), 1);
         // check the stream
-        var res = Utils.readStream(helper.client, "s01", 5);
-        Assertions.assertEquals(1, res.size());
-        helper.deleteConnector("ss01");
+        Utils.runUntil(10, 3, () -> helper.client.listStreams().size() > 0);
+        var res = Utils.readStream(helper.client, stream,10, 30);
+        Assertions.assertEquals(10, res.size());
+        helper.deleteConnector(connectorName);
     }
 }
