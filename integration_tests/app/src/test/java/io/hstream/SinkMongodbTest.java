@@ -46,7 +46,7 @@ public class SinkMongodbTest {
 
     @Test
     void testFullReplication() throws Exception {
-        var ds = dataSet(10);
+        var ds = Utils.randomDataSet(10);
         var streamName = "stream01";
         helper.writeStream(streamName, ds);
         createConnector(streamName, dbStr, collectionStr);
@@ -54,24 +54,6 @@ public class SinkMongodbTest {
         var docs = readDocs();
         helper.deleteConnector("sk1");
         Assertions.assertEquals(10, docs.size());
-    }
-
-    List<HRecord> dataSet(int num) {
-        assert num > 0;
-        var ds = new LinkedList<HRecord>();
-        var rand = new Random();
-        for (int i = 0; i < num; i++) {
-            ds.add(HRecord.newBuilder()
-                    .put("key", HRecord.newBuilder().put("k1", i).build())
-                    .put("value", HRecord.newBuilder()
-                            .put("k1", i)
-                            .put("v1", rand.nextInt(100))
-                            .put("v2", UUID.randomUUID().toString())
-                            .build())
-                    .build()
-            );
-        }
-        return ds;
     }
 
     List<Document> readDocs() throws InterruptedException {
