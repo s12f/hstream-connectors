@@ -29,11 +29,6 @@ public class Mongodb implements Source, Sink{
         // service
         service = new MongoDBContainer(DockerImageName.parse("mongo:4.0.10"));
         service.start();
-//        try {
-//            service.execInContainer("mongo --eval 'rs.initiate({_id: \"hstream_io\", members:[{_id: 0, host: \"localhost:27017\"}]})'");
-//        } catch (IOException | InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
 
         // connector
         var hosts = "127.0.0.1:" + service.getFirstMappedPort();
