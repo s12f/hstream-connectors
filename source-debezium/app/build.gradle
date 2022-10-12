@@ -38,6 +38,11 @@ dependencies {
     implementation 'io.debezium:debezium-connector-mysql:1.9.3.Final'
     implementation 'io.debezium:debezium-connector-postgres:1.9.3.Final'
     implementation 'io.debezium:debezium-connector-sqlserver:1.9.3.Final'
+    implementation 'io.debezium:debezium-connector-mongodb:1.9.3.Final'
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 
 }
 
@@ -61,10 +66,16 @@ task buildSqlserverImage(type: Exec) {
     commandLine "docker", "build", "..", "-f", "../docker/SqlserverDockerfile", "-t", "hstreamdb/source-sqlserver:${imageVersion}"
 }
 
+task buildMongodbImage(type: Exec) {
+    dependsOn(installDist)
+    commandLine "docker", "build", "..", "-f", "../docker/MongodbDockerfile", "-t", "hstreamdb/source-mongodb:${imageVersion}"
+}
+
 task buildImages {
     dependsOn(buildMysqlImage)
     dependsOn(buildPostgresqlImage)
     dependsOn(buildSqlserverImage)
+    dependsOn(buildMongodbImage)
 }
 
 tasks.named('test') {

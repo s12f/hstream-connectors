@@ -7,7 +7,7 @@ import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SourceTaskContextImpl;
 import java.util.UUID;
 
-public class PostgresqlSourceTask extends DebeziumSourceTask {
+public class PostgresqlSourceTask extends RdbSourceTask {
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
         var dbname = cfg.getString("database");

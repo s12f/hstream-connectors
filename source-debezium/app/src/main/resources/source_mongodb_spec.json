@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source-mongodb",
+  "description": "the configuration specification of source-mongodb",
+  "type": "object",
+  "properties": {
+    "user": {
+      "title": "User Name",
+      "description": "user name",
+      "type": "string"
+    },
+    "password": {
+      "title": "Password",
+      "description": "password of the user",
+      "type": "string"
+    },
+    "hosts": {
+      "description": "hosts",
+      "type": "string",
+      "examples": ["host1", "host1:1234", "host1:1234,host2:1234"]
+    },
+    "database": {
+      "title": "Database Name",
+      "description": "database name",
+      "type": "string"
+    },
+    "collection": {
+      "title": "Connection Name",
+      "description": "Connection name of the database",
+      "type": "string"
+    },
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string"
+    }
+  },
+  "required": [ "hosts", "database", "collection", "stream" ]
+}

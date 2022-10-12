@@ -39,6 +39,7 @@ dependencies {
 
     // test containers
     testImplementation "org.testcontainers:testcontainers:1.17.3"
+    testImplementation "org.testcontainers:mongodb:1.17.5"
 
     // jdbc
     implementation 'mysql:mysql-connector-java:8.0.29'
