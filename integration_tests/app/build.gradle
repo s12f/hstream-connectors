@@ -44,6 +44,7 @@ dependencies {
     // jdbc
     implementation 'mysql:mysql-connector-java:8.0.29'
     implementation 'org.postgresql:postgresql:42.4.0'
+    testImplementation 'com.microsoft.sqlserver:mssql-jdbc:11.2.1.jre11'
     testImplementation 'org.jooq:jooq:3.16.7'
 
     // HStreamDB Java Client

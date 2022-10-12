@@ -3,6 +3,7 @@ package io.hstream;
 import io.hstream.external.Jdbc;
 import io.hstream.external.Sink;
 import io.hstream.external.Source;
+import io.hstream.external.Sqlserver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
@@ -153,6 +154,9 @@ public class Utils {
         var table = "t1";
         if (source instanceof Jdbc) {
             Utils.createTableForRandomDataSet((Jdbc) source, table);
+            if (source instanceof Sqlserver) {
+                ((Sqlserver) (source)).enableCdcForTable(table);
+            }
         }
         source.writeDataSet(table, dataSet);
         // create connector

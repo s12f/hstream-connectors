@@ -29,7 +29,7 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
         final int[] rs = {records.size()};
         for (var r : records) {
             log.info("key:{}", r.key());
-            log.info("val:{}", r.key());
+            log.info("val:{}", r.value());
             log.info("dst:{}", r.destination());
             // ignore ddl events
             if (r.destination().equals(serverName)) {
@@ -67,7 +67,7 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
             hRecordBuilder.put("value", HRecord.newBuilder().merge(record.value()).build());
         }
         var hRecord = hRecordBuilder.build();
-        System.out.println("hRecord:" + hRecord.toJsonString());
+        log.info("hRecord:{}", hRecord.toCompactJsonString());
         var r = Record.newBuilder().hRecord(hRecord).build();
         return new SourceRecord(stream, r);
     }
