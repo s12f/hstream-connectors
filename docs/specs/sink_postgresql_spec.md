@@ -68,4 +68,3 @@
 **Description:** table name of the database
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2022-09-16 at 18:53:20 +0800

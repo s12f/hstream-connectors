@@ -6,7 +6,7 @@ import io.hstream.io.SourceTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SourceTaskContextImpl;
 
-public class MysqlSourceTask extends DebeziumSourceTask {
+public class MysqlSourceTask extends RdbSourceTask {
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
         var dbname = cfg.getString("database");

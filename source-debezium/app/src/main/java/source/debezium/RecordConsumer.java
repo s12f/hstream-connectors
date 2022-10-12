@@ -7,25 +7,30 @@ import io.hstream.Record;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
 import java.util.List;
+import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> {
     SourceTaskContext ctx;
     String serverName;
     String stream;
+    Function<HRecord, HRecord> keyMapper;
 
-    public RecordConsumer(SourceTaskContext ctx, String serverName, String stream) {
+    public RecordConsumer(SourceTaskContext ctx, String serverName, String stream, Function<HRecord, HRecord> keyMapper) {
         this.ctx = ctx;
         this.serverName = serverName;
         this.stream = stream;
+        this.keyMapper = keyMapper;
     }
 
     @Override
     public void handleBatch(List<ChangeEvent<String, String>> records, DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> committer) throws InterruptedException {
         final int[] rs = {records.size()};
         for (var r : records) {
-            System.out.println("key:" + r.key());
-            System.out.println("val:" + r.value());
-            System.out.println("dst:" + r.destination());
+            log.info("key:{}", r.key());
+            log.info("val:{}", r.key());
+            log.info("dst:{}", r.destination());
             // ignore ddl events
             if (r.destination().equals(serverName)) {
                 continue;
@@ -50,6 +55,9 @@ public class RecordConsumer implements DebeziumEngine.ChangeConsumer<ChangeEvent
 
     private SourceRecord toSourceRecord(ChangeEvent<String, String> record) {
         var keyRecord = HRecord.newBuilder().merge(record.key()).build();
+        if (keyMapper != null) {
+            keyRecord = keyMapper.apply(keyRecord);
+        }
         var hRecordBuilder
                 = HRecord.newBuilder()
                 .put("key", keyRecord);

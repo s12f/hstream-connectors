@@ -91,6 +91,7 @@ public class HStreamService {
                                 + " --store-admin-port 6440"
                                 + " --log-level debug"
                                 + " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\""
+                                + " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
                                 + " --log-with-color"
                                 + " --store-log-level error")
                 .waitingFor(Wait.forLogMessage(".*Server is started on port.*", 1));

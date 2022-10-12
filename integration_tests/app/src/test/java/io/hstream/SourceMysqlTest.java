@@ -4,7 +4,6 @@
 package io.hstream;
 
 import io.hstream.external.Mysql;
-import java.sql.Connection;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,22 +29,7 @@ class SourceMysqlTest {
     }
 
     @Test
-    void testFullReplication() throws Exception {
-        // prepared data
-        var dataSet = Utils.randomDataSetWithoutKey(10);
-        var table = "t1";
-        Utils.createTableForRandomDataSet(mysql, table);
-        mysql.writeDataSet(table, dataSet);
-        // create connector
-        var connectorName = "ss1";
-        var stream = "stream01";
-        helper.createConnector(connectorName, mysql.createSourceConnectorSql(connectorName, stream, table));
-        var result = helper.listConnectors();
-        Assertions.assertEquals(result.size(), 1);
-        // check the stream
-        Utils.runUntil(10, 3, () -> helper.client.listStreams().size() > 0);
-        var res = Utils.readStream(helper.client, stream,10, 30);
-        Assertions.assertEquals(10, res.size());
-        helper.deleteConnector(connectorName);
+    void testFullSync() throws Exception {
+        Utils.testSourceFullSync(helper, mysql);
     }
 }

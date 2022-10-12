@@ -13,11 +13,19 @@ import java.io.IOException;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 import java.util.UUID;
+import java.util.function.Function;
 
 abstract class DebeziumSourceTask implements SourceTask {
     DebeziumEngine<ChangeEvent<String, String>> engine;
     SourceTaskContext ctx;
     Properties props = new Properties();
+    String namespace = UUID.randomUUID().toString().replace("-", "");
+
+    public void setKeyMapper(Function<HRecord, HRecord> keyMapper) {
+        this.keyMapper = keyMapper;
+    }
+
+    Function<HRecord, HRecord> keyMapper;
 
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
@@ -38,29 +46,14 @@ abstract class DebeziumSourceTask implements SourceTask {
         props.setProperty("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         props.setProperty("value.converter.schemas.enable", "false");
 
-        props.setProperty("database.hostname", cfg.getString("host"));
-        props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
-        props.setProperty("database.user", cfg.getString("user"));
-        props.setProperty("database.password", cfg.getString("password"));
-
-        var namespace = UUID.randomUUID().toString().replace("-", "");
-//        if (cfg.contains("namespace")) {
-//            namespace = cfg.getString("namespace");
-//        }
-        props.setProperty("database.server.name", namespace);
         DatabaseHistory.setKv(ctx.getKvStore());
         props.setProperty("database.history", "source.debezium.DatabaseHistory");
-
-        // transforms
-        props.setProperty("transforms", "unwrap");
-        props.setProperty("transforms.unwrap.type", "io.debezium.transforms.ExtractNewRecordState");
-        props.setProperty("transforms.unwrap.drop.tombstones", "false");
 
         // Create the engine with this configuration ...
         engine = DebeziumEngine.create(Json.class)
                 .using(props)
                 .using(OffsetCommitPolicy.always())
-                .notifying(new RecordConsumer(ctx, namespace, cfg.getString("stream")))
+                .notifying(new RecordConsumer(ctx, namespace, cfg.getString("stream"), keyMapper))
                 .build();
 
         engine.run();

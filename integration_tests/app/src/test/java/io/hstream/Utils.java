@@ -1,6 +1,8 @@
 package io.hstream;
 
 import io.hstream.external.Jdbc;
+import io.hstream.external.Sink;
+import io.hstream.external.Source;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
@@ -41,22 +43,6 @@ public class Utils {
         return new GenericContainer<>("mongo")
                 .withExposedPorts(27017)
                 .waitingFor(Wait.forListeningPort());
-    }
-
-    public static Connection getMysqlConn(int port) {
-        Properties connectionProps = new Properties();
-        connectionProps.put("user", "root");
-        connectionProps.put("password", mysqlRootPassword);
-
-        try {
-            var conn = DriverManager.getConnection(
-                    "jdbc:mysql://127.0.0.1:" + port + "/",
-                    connectionProps);
-            System.out.println("Connected to database");
-            return conn;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static Connection getPgConn(int port, String database) {
@@ -159,5 +145,50 @@ public class Utils {
             }
         }
         throw new RuntimeException("runUntil timeout, retried:" + count);
+    }
+
+    public static void testSourceFullSync(HStreamHelper helper, Source source) {
+        // prepared data
+        var dataSet = Utils.randomDataSetWithoutKey(10);
+        var table = "t1";
+        if (source instanceof Jdbc) {
+            Utils.createTableForRandomDataSet((Jdbc) source, table);
+        }
+        source.writeDataSet(table, dataSet);
+        // create connector
+        var connectorName = "ss1";
+        var stream = "stream01";
+        helper.createConnector(connectorName, source.createSourceConnectorSql(connectorName, stream, table));
+        var result = helper.listConnectors();
+        Assertions.assertEquals(result.size(), 1);
+        // check the stream
+        Utils.runUntil(10, 3, () -> helper.client.listStreams().size() > 0);
+        var res = Utils.readStream(helper.client, stream,10, 30);
+        Assertions.assertEquals(10, res.size());
+        helper.deleteConnector(connectorName);
+    }
+
+    public static void testSinkFullSync(HStreamHelper helper, Sink sink) {
+        var streamName = "stream01";
+        var connectorName = "sk1";
+        var table = "t1";
+        var count = 10;
+        var ds = Utils.randomDataSet(count);
+        helper.writeStream(streamName, ds);
+        if (sink instanceof Jdbc) {
+            Utils.createTableForRandomDataSet((Jdbc)sink, table);
+        }
+        var sql = sink.createSinkConnectorSql(connectorName, streamName, table);
+        helper.createConnector(streamName, sql);
+        Utils.runUntil(10, 3, () -> sink.readDataSet(table).size() >= count);
+        // wait and re-check
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        var dataSet = sink.readDataSet(table);
+        Assertions.assertEquals(count, dataSet.size());
+        helper.deleteConnector(connectorName);
     }
 }
