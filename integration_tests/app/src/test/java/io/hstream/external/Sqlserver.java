@@ -30,7 +30,16 @@ public class Sqlserver extends Jdbc {
         service.start();
 
         try {
-            createDatabase();
+            Utils.runUntil(3, 3, () -> {
+                try {
+                    createDatabase();
+                    return true;
+                } catch (Exception e) {
+                    log.info("create database failed:{}", e.getMessage());
+                    e.printStackTrace();
+                    return false;
+                }
+            });
             var uri = String.format(
                     "jdbc:sqlserver://127.0.0.1:%s;databaseName=%s;user=sa;password=%s;encrypt=false",
                     service.getFirstMappedPort(), db, password);
