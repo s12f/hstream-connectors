@@ -32,3 +32,12 @@ jobs:
         run: |
           cd integration_tests
           ./gradlew test
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ success() }} || ${{ failure() }}
+        with:
+          name: logs
+          path: |
+            integration_tests/.logs
+            /tmp/io/tasks
+            integration_tests/app/build/reports
