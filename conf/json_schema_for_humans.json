@@ -3,5 +3,6 @@
     "copy_js": false,
     "show_toc": false,
     "template_name": "md",
-    "show_breadcrumbs": false
+    "show_breadcrumbs": false,
+    "with_footer": false
 }
