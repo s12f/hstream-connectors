@@ -72,6 +72,7 @@ public class HStreamService {
     }
 
     public GenericContainer<?> makeServer(Path dataDir) {
+        var latestImages = getLatestImages();
         var extraImages = getExtraImages();
         return new GenericContainer<>(getHStreamImageName())
                 .withNetworkMode("host")
@@ -92,17 +93,28 @@ public class HStreamService {
                                 + " --store-config /data/hstore/logdevice.conf"
                                 + " --store-admin-port 6440"
                                 + " --log-level debug"
+                                + latestImages
                                 + extraImages
                                 + " --log-with-color"
                                 + " --store-log-level error")
                 .waitingFor(Wait.forLogMessage(".*Server is started on port.*", 1));
     }
 
-    String getExtraImages() {
-        String disableExtraImages = System.getenv("HSTREAM_IO_DISABLE_EXTRA_IMAGES");
-        if (disableExtraImages != null && disableExtraImages.equals("true")) {
+    String getLatestImages() {
+        String useDefaultImages = System.getenv("HSTREAM_IO_USE_DEFAULT_IMAGES");
+        if (useDefaultImages != null && useDefaultImages.equals("true")) {
             return "";
         }
+        return String.join(" ", List.of(
+                " --io-connector-image \"source mysql hstreamdb/source-mysql:latest\"",
+                " --io-connector-image \"source postgresql hstreamdb/source-postgresql:latest\"",
+                " --io-connector-image \"source sqlserver hstreamdb/source-sqlserver:latest\"",
+                " --io-connector-image \"sink mysql hstreamdb/sink-mysql:latest\"",
+                " --io-connector-image \"sink postgresql hstreamdb/sink-postgresql:latest\""
+        ));
+    }
+
+    String getExtraImages() {
         return String.join(" ", List.of(
                 " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\"",
                 " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
