@@ -3,6 +3,7 @@ package io.hstream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.TestInfo;
 import org.testcontainers.containers.BindMode;
@@ -71,6 +72,7 @@ public class HStreamService {
     }
 
     public GenericContainer<?> makeServer(Path dataDir) {
+        var extraImages = getExtraImages();
         return new GenericContainer<>(getHStreamImageName())
                 .withNetworkMode("host")
                 .withFileSystemBind(dataDir.toAbsolutePath().toString(), "/data/hstore", BindMode.READ_ONLY)
@@ -90,11 +92,21 @@ public class HStreamService {
                                 + " --store-config /data/hstore/logdevice.conf"
                                 + " --store-admin-port 6440"
                                 + " --log-level debug"
-                                + " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\""
-                                + " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
+                                + extraImages
                                 + " --log-with-color"
                                 + " --store-log-level error")
                 .waitingFor(Wait.forLogMessage(".*Server is started on port.*", 1));
+    }
+
+    String getExtraImages() {
+        String disableExtraImages = System.getenv("HSTREAM_IO_DISABLE_EXTRA_IMAGES");
+        if (disableExtraImages != null && disableExtraImages.equals("true")) {
+            return "";
+        }
+        return String.join(" ", List.of(
+                " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\"",
+                " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
+        ));
     }
 
     int getServerPort() {
