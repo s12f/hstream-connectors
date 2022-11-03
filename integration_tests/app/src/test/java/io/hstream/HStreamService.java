@@ -110,15 +110,14 @@ public class HStreamService {
                 " --io-connector-image \"source postgresql hstreamdb/source-postgresql:latest\"",
                 " --io-connector-image \"source sqlserver hstreamdb/source-sqlserver:latest\"",
                 " --io-connector-image \"sink mysql hstreamdb/sink-mysql:latest\"",
-                " --io-connector-image \"sink postgresql hstreamdb/sink-postgresql:latest\""
+                " --io-connector-image \"sink postgresql hstreamdb/sink-postgresql:latest\"",
+                " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\"",
+                " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
         ));
     }
 
     String getExtraImages() {
-        return String.join(" ", List.of(
-                " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\"",
-                " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""
-        ));
+        return "";
     }
 
     int getServerPort() {
