@@ -38,7 +38,7 @@ dependencies {
 
     // HStream
     implementation 'io.hstream:java-toolkit:0.1.0-SNAPSHOT'
-    implementation 'io.hstream:hstreamdb-java:0.10.0-SNAPSHOT'
+    implementation 'io.hstream:hstreamdb-java:0.10.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
 }
 

@@ -8,13 +8,10 @@ import io.hstream.HArray;
 import io.hstream.HRecord;
 import io.hstream.Options;
 import io.hstream.Utils;
-import java.io.IOException;
 import java.util.LinkedList;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Slf4j
