@@ -132,6 +132,7 @@ public class TaskRunner {
             System.out.println(msg);
 //            channel.send(msg);
         }
+        System.out.flush();
     }
 
     void parseConfig(String cfgPath) {
