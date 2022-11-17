@@ -63,7 +63,7 @@ public class Utils {
     }
 
     static List<HRecord> readStream(HStreamClient client, String stream, int count, int timeout) {
-        var subId = UUID.randomUUID().toString();
+        var subId = "sub_" + UUID.randomUUID();
         client.createSubscription(Subscription.newBuilder()
                 .stream(stream)
                 .subscription(subId)
