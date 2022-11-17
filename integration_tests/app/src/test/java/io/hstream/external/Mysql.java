@@ -29,15 +29,18 @@ public class Mysql extends Jdbc {
         connectionProps.put("user", "root");
         connectionProps.put("password", password);
 
-        try {
-            var conn = DriverManager.getConnection(
-                    "jdbc:mysql://127.0.0.1:" + service.getFirstMappedPort() + "/" + db,
-                    connectionProps);
-            System.out.println("Connected to database");
-            this.conn = conn;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        Utils.runUntil(5, 1, () -> {
+            try {
+                var conn = DriverManager.getConnection(
+                        "jdbc:mysql://127.0.0.1:" + service.getFirstMappedPort() + "/" + db,
+                        connectionProps);
+                System.out.println("Connected to database");
+                this.conn = conn;
+                return true;
+            } catch (SQLException e) {
+                return false;
+            }
+        });
     }
 
     @Override
