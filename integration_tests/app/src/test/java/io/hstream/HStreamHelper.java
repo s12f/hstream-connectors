@@ -30,13 +30,13 @@ public class HStreamHelper {
         System.out.println("HStreamDB started");
     }
 
-    void writeStream(String stream, HArray records) {
+    void writeStream(String stream, List<Record> records) {
         if (client.listStreams().stream().noneMatch(s -> s.getStreamName().equals(stream))) {
             client.createStream(stream);
         }
         try (var producer = client.newBufferedProducer().stream(stream).build()) {
-            for (int i = 0; i < records.size(); i++) {
-                producer.write(Record.newBuilder().hRecord(records.getHRecord(i)).build());
+            for (var record : records) {
+                producer.write(record);
             }
         }
     }

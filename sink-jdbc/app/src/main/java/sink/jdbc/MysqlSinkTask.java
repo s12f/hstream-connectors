@@ -20,6 +20,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
     String database;
     String table;
     Connection conn;
+    List<String> primaryKeys;
 
     @Override
     public void init(HRecord cfg) {
@@ -30,6 +31,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
         this.database = cfg.getString("database");
         this.table = cfg.getString("table");
         this.conn = getConn();
+        this.primaryKeys = Utils.getPrimaryKey(conn, table);
     }
 
     public Connection getConn() {
@@ -73,6 +75,11 @@ public class MysqlSinkTask extends JdbcSinkTask {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    List<String> getPrimaryKeys() {
+        return primaryKeys;
     }
 
     @Override

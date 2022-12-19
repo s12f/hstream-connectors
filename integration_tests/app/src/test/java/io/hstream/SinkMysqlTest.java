@@ -24,6 +24,16 @@ public class SinkMysqlTest {
         Utils.testSinkFullSync(helper, mysql);
     }
 
+    @Test
+    void testPlainHRecord() throws Exception {
+        Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.PLAIN);
+    }
+
+    @Test
+    void testRawJsonRecord() throws Exception {
+        Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.RAW_JSON);
+    }
+
     @AfterEach
     void tearDown() throws Exception {
         mysql.close();
