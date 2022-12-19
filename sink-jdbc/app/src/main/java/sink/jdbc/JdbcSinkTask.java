@@ -13,7 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 abstract public class JdbcSinkTask implements SinkTask {
     @Override
     public void run(HRecord cfg, SinkTaskContext ctx) {
@@ -22,7 +24,9 @@ abstract public class JdbcSinkTask implements SinkTask {
             for (var record : records) {
                 var m = record.record.getDelegate().getFieldsMap();
                 try {
-                    if (m.get("value").hasNullValue()) {
+                    if (!isValidIORecord(record.record)) {
+                        upsertPainRecords(List.of(record));
+                    } else if (m.get("value").hasNullValue()) {
                         delete(List.of(record));
                     } else {
                         upsert(List.of(record));
@@ -34,6 +38,17 @@ abstract public class JdbcSinkTask implements SinkTask {
         });
     }
 
+    boolean isValidIORecord(HRecord hRecord) {
+        if (hRecord.contains("key") && hRecord.contains("value")) {
+            try {
+                hRecord.getHRecord("key");
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
 
     void upsert(List<SinkRecord> records) throws SQLException {
         var fields = getFields(records.get(0));
@@ -41,6 +56,25 @@ abstract public class JdbcSinkTask implements SinkTask {
         PreparedStatement stmt = getUpsertStmt(fields, keys);
         for(var record : records) {
             var m = record.record.getHRecord("value").getDelegate().getFieldsMap();
+            for(int i = 0; i < fields.size(); i++) {
+                stmt.setObject(i + 1, valueToObject(m.get(fields.get(i))));
+            }
+            stmt.addBatch();
+        }
+        stmt.executeBatch();
+        stmt.close();
+    }
+
+    void upsertPainRecords(List<SinkRecord> records) throws SQLException {
+        var fields = getHRecordFields(records.get(0).record);
+        var keys = getPrimaryKeys();
+        log.info("primary keys:{}", keys);
+        if (keys.isEmpty()) {
+            throw new RuntimeException("primary keys is empty");
+        }
+        PreparedStatement stmt = getUpsertStmt(fields, keys);
+        for(var record : records) {
+            var m = record.record.getDelegate().getFieldsMap();
             for(int i = 0; i < fields.size(); i++) {
                 stmt.setObject(i + 1, valueToObject(m.get(fields.get(i))));
             }
@@ -69,7 +103,11 @@ abstract public class JdbcSinkTask implements SinkTask {
     }
 
     List<String> getFields(SinkRecord record) {
-        return new ArrayList<>(structToMap(record.record.getHRecord("value").getDelegate()).keySet());
+        return getHRecordFields(record.record.getHRecord("value"));
+    }
+
+    List<String> getHRecordFields(HRecord hRecord) {
+        return new ArrayList<>(structToMap(hRecord.getDelegate()).keySet());
     }
 
     public Object valueToObject(Value value) {
@@ -102,6 +140,7 @@ abstract public class JdbcSinkTask implements SinkTask {
     abstract void init(HRecord cfg);
     abstract PreparedStatement getUpsertStmt(List<String> fields, List<String> keys);
     abstract PreparedStatement getDeleteStmt(List<String> keys);
+    abstract List<String> getPrimaryKeys();
 
     @Override
     public void stop() {}

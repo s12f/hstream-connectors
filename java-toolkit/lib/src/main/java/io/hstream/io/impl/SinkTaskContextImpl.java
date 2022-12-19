@@ -1,5 +1,6 @@
 package io.hstream.io.impl;
 
+import com.google.common.base.Utf8;
 import io.hstream.Consumer;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
@@ -10,7 +11,9 @@ import io.hstream.io.SinkTaskContext;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
     HRecord cfg;
     HStreamClient client;
@@ -51,14 +54,30 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         }
         this.consumer = client.newConsumer()
                 .subscription(subId)
+                .rawRecordReceiver(((receivedRawRecord, responder) -> {
+                    log.debug("received raw record:{}", receivedRawRecord.getRecordId());
+                    var hRecord = tryConvertToHRecord(receivedRawRecord.getRawRecord());
+                    if (hRecord != null) {
+                        handler.accept(stream, List.of(makeSinkRecord(hRecord)));
+                        responder.ack();
+                    }
+                }))
                 .hRecordReceiver((receivedHRecord, responder) -> {
-                    System.out.println("received:" + receivedHRecord.getHRecord().toJsonString());
+                    log.debug("received:{}", receivedHRecord.getHRecord().toJsonString());
                     handler.accept(stream, List.of(makeSinkRecord(receivedHRecord.getHRecord())));
                     responder.ack();
                 })
                 .build();
         consumer.startAsync().awaitRunning();
         consumer.awaitTerminated();
+    }
+
+    HRecord tryConvertToHRecord(byte[] rawRecord) {
+        try {
+            return HRecord.newBuilder().merge(new String(rawRecord)).build();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

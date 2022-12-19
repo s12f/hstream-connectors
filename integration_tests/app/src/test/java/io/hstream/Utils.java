@@ -6,6 +6,7 @@ import io.hstream.external.Source;
 import io.hstream.external.Sqlserver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.containers.GenericContainer;
@@ -86,22 +88,39 @@ public class Utils {
         return res;
     }
 
-    static HArray randomDataSet(int num) {
+    static List<Record> randomDataSet(int num) {
         assert num > 0;
-        var arrBuilder = HArray.newBuilder();
+        var lst = new LinkedList<Record>();
         var rand = new Random();
         for (int i = 0; i < num; i++) {
-            arrBuilder.add(HRecord.newBuilder()
+            lst.add(Record.newBuilder().hRecord(HRecord.newBuilder()
                     .put("key", HRecord.newBuilder().put("k1", i).build())
                     .put("value", HRecord.newBuilder()
                             .put("k1", i)
                             .put("v1", rand.nextInt(100))
                             .put("v2", UUID.randomUUID().toString())
                             .build())
-                    .build()
-            );
+                    .build()).build());
         }
-        return arrBuilder.build();
+        return lst;
+    }
+
+    static List<Record> randomPlainDataSet(int num) {
+        assert num > 0;
+        return randomDataSet(num).stream()
+                .map(r -> Record.newBuilder()
+                        .hRecord(r.getHRecord().getHRecord("value"))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    static List<Record> randomRawJsonDataSet(int num) {
+        assert num > 0;
+        return randomPlainDataSet(num).stream()
+                .map(r -> Record.newBuilder()
+                        .rawRecord(r.getHRecord().toCompactJsonString().getBytes(StandardCharsets.UTF_8))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     static HArray randomDataSetWithoutKey(int num) {
@@ -173,11 +192,32 @@ public class Utils {
     }
 
     public static void testSinkFullSync(HStreamHelper helper, Sink sink) {
+        testSinkFullSync(helper, sink, IORecordType.KEY_VALUE);
+    }
+
+    public enum IORecordType {
+        RAW_JSON,
+        PLAIN,
+        KEY_VALUE
+    }
+
+    public static void testSinkFullSync(HStreamHelper helper, Sink sink, IORecordType recordType) {
         var streamName = "stream01";
         var connectorName = "sk1";
         var table = "t1";
         var count = 10;
-        var ds = Utils.randomDataSet(count);
+        List<Record> ds = null;
+        switch (recordType) {
+            case RAW_JSON:
+                ds = Utils.randomRawJsonDataSet(count);
+                break;
+            case PLAIN:
+                ds = Utils.randomPlainDataSet(count);
+                break;
+            case KEY_VALUE:
+                ds = Utils.randomDataSet(count);
+                break;
+        }
         helper.writeStream(streamName, ds);
         if (sink instanceof Jdbc) {
             Utils.createTableForRandomDataSet((Jdbc)sink, table);

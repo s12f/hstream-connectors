@@ -15,7 +15,6 @@ import io.hstream.io.internal.Channel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Scanner;
 import lombok.extern.slf4j.Slf4j;
 
 @Parameters(
@@ -106,7 +105,7 @@ public class TaskRunner {
                 } catch (Exception e) {
                     log.info("unexpected error when running connector:{}", e.getMessage());
                     e.printStackTrace(System.out);
-                    stop();
+                    Utils.runWithTimeout(3, this::stop);
                 }
                 break;
             default:
@@ -152,7 +151,8 @@ public class TaskRunner {
         channel.handle(msg -> {
             var cmdType = msg.get("type").asText();
             if (cmdType.equals("stop")) {
-                stop();
+                Utils.runWithTimeout(3, this::stop);
+                System.exit(0);
             }
         });
     }
