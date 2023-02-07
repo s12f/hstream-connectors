@@ -43,9 +43,6 @@ dependencies {
 
     implementation 'io.hstream:hstreamdb-java:0.10.0-SNAPSHOT'
     implementation 'com.beust:jcommander:1.82'
-    implementation 'io.debezium:debezium-api:1.9.3.Final'
-    implementation 'io.debezium:debezium-embedded:1.9.3.Final'
-    implementation 'org.apache.zookeeper:zookeeper:3.8.0'
     implementation 'com.networknt:json-schema-validator:1.0.71'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
 

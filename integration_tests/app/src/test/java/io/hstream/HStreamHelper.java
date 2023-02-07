@@ -11,6 +11,7 @@ import io.hstream.internal.LookupConnectorRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.TestInfo;
 
@@ -26,8 +27,23 @@ public class HStreamHelper {
     this.testInfo = testInfo;
     service = new HStreamService();
     service.start();
-    client = HStreamClient.builder().serviceUrl(serverHost + ":" + service.getServerPort()).build();
+    client = getClient();
     System.out.println("HStreamDB started");
+  }
+
+  @SneakyThrows
+  HStreamClient getClient() {
+    int retry = 0;
+    while (retry < 3) {
+      retry++;
+      try {
+        return HStreamClient.builder().serviceUrl(serverHost + ":" + service.getServerPort()).build();
+      } catch (Exception e) {
+        log.info("get client failed:{}", e.getMessage());
+        Thread.sleep(1000);
+      }
+    }
+    throw new RuntimeException("get client timeout");
   }
 
   void writeStream(String stream, List<Record> records) {
