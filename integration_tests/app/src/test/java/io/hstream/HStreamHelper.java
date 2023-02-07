@@ -37,7 +37,8 @@ public class HStreamHelper {
     while (retry < 3) {
       retry++;
       try {
-        return HStreamClient.builder().serviceUrl(serverHost + ":" + service.getServerPort()).build();
+        var url = "hstream://" + serverHost + ":" + service.getServerPort();
+        return HStreamClient.builder().serviceUrl(url).build();
       } catch (Exception e) {
         log.info("get client failed:{}", e.getMessage());
         Thread.sleep(1000);
