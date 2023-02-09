@@ -47,7 +47,7 @@ public class Sqlserver extends Jdbc {
               "jdbc:sqlserver://127.0.0.1:%s;databaseName=%s;user=sa;password=%s;encrypt=false",
               service.getFirstMappedPort(), db, password);
       var conn = DriverManager.getConnection(uri);
-      System.out.println("Connected to database");
+      log.info("Connected to database");
       try (var stmt = conn.createStatement()) {
         stmt.execute("EXEC sys.sp_cdc_enable_db");
       }
@@ -62,8 +62,18 @@ public class Sqlserver extends Jdbc {
         String.format(
             "EXEC sys.sp_cdc_enable_table @source_schema = 'dbo', @source_name = '%s', @role_name = NULL, @supports_net_changes = 0;",
             table);
-    execute(sql);
-  }
+    Utils.runUntil(3, 1, () -> {
+      try {
+        execute(sql);
+        return true;
+      } catch (Exception e) {
+        log.info("enable CDC for table failed:{}", e.getMessage());
+        e.printStackTrace();
+        return false;
+      }
+  });
+  ;
+}
 
   @Override
   Connection getConn() {

@@ -60,6 +60,7 @@ public class TaskRunner {
     KvStore kv;
 
     public void run(String[] args, Task task, TaskContext taskContext) {
+        log.info("task runner started");
         this.task = task;
         this.ctx = taskContext;
         this.channel = new StdioChannel();
