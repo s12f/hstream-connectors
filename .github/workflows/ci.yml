@@ -27,7 +27,8 @@ jobs:
       - name: run test
         run: |
           make pull_images
-          make test
+          cd integration_tests
+          ./gradlew test --rerun-tasks --info --fail-fast
 
       - uses: actions/upload-artifact@v2
         if: ${{ success() }} || ${{ failure() }}
