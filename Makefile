@@ -16,7 +16,13 @@ pull_images:
 	docker pull postgres
 	
 pull_connector_images:
-	for image in $(cat conf/all_images); do docker pull $image; done
+	docker pull hstreamdb/source-mysql
+	docker pull hstreamdb/source-postgresql
+	docker pull hstreamdb/source-sqlserver
+	docker pull hstreamdb/source-mongodb
+	docker pull hstreamdb/sink-mysql
+	docker pull hstreamdb/sink-postgresql
+	docker pull hstreamdb/sink-mongodb
 
 test:
 	( \
