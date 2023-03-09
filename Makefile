@@ -14,6 +14,9 @@ pull_images:
 	docker pull mcr.microsoft.com/mssql/server:2022-latest
 	docker pull mysql
 	docker pull postgres
+	
+pull_connector_images:
+	for image in $(cat conf/all_images); do docker pull $image; done
 
 test:
 	( \
