@@ -43,31 +43,16 @@ public class Mongodb implements Source, Sink {
   }
 
   @Override
-  public String createSinkConnectorSql(String name, String stream, String target) {
+  public String getCreateConnectorConfig(String stream, String target) {
     var hostname = Utils.getHostname();
-    var options =
-        new Options()
+    var cfg = Utils.mapper.createObjectNode()
             .put("hosts", hostname + ":" + service.getFirstMappedPort())
             .put("stream", stream)
             .put("database", dbStr)
-            .put("collection", target);
-    var sql = String.format("create sink connector %s to mongodb with (%s);", name, options);
-    log.info("create sink mongodb sql:{}", sql);
-    return sql;
-  }
-
-  @Override
-  public String createSourceConnectorSql(String name, String stream, String target) {
-    var hostname = Utils.getHostname();
-    var options =
-        new Options()
-            .put("hosts", hostname + ":" + service.getFirstMappedPort())
-            .put("stream", stream)
-            .put("database", dbStr)
-            .put("collection", target);
-    var sql = String.format("create source connector %s from mongodb with (%s);", name, options);
-    log.info("create source mongodb sql:{}", sql);
-    return sql;
+            .put("collection", target)
+            .toString();
+    log.info("create mongodb connector config:{}", cfg);
+    return cfg;
   }
 
   @Override
@@ -92,5 +77,10 @@ public class Mongodb implements Source, Sink {
       docs.add(Document.parse(json));
     }
     collection.insertMany(docs);
+  }
+
+  @Override
+  public String getName() {
+    return "mongodb";
   }
 }

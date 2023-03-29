@@ -23,9 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 public class Utils {
+  static public ObjectMapper mapper = new ObjectMapper();
   static String mysqlRootPassword = "password";
   static String postgresPassword = "postgres";
 
@@ -196,15 +198,19 @@ public class Utils {
     // create connector
     var connectorName = "ss1";
     var stream = "stream01";
-    helper.createConnector(
-        connectorName, source.createSourceConnectorSql(connectorName, stream, table));
-    var result = helper.listConnectors();
+    helper.client.createConnector(CreateConnectorRequest.newBuilder()
+                    .name(connectorName)
+                    .type(ConnectorType.valueOf("SOURCE"))
+                    .target(source.getName())
+                    .config(source.getCreateConnectorConfig(stream, table))
+                    .build());
+    var result = helper.client.listConnectors();
     Assertions.assertEquals(result.size(), 1);
     // check the stream
     Utils.runUntil(10, 3, () -> helper.client.listStreams().size() > 0);
     var res = Utils.readStream(helper.client, stream, 10, 30);
     Assertions.assertEquals(10, res.size());
-    helper.deleteConnector(connectorName);
+    helper.client.deleteConnector(connectorName);
   }
 
   public static void testSinkFullSync(HStreamHelper helper, Sink sink) {
@@ -238,8 +244,12 @@ public class Utils {
     if (sink instanceof Jdbc) {
       Utils.createTableForRandomDataSet((Jdbc) sink, table);
     }
-    var sql = sink.createSinkConnectorSql(connectorName, streamName, table);
-    helper.createConnector(streamName, sql);
+    helper.client.createConnector(CreateConnectorRequest.newBuilder()
+                    .name(connectorName)
+                    .type(ConnectorType.valueOf("SINK"))
+                    .target(sink.getName())
+                    .config(sink.getCreateConnectorConfig(streamName, table))
+            .build());
     Utils.runUntil(10, 3, () -> sink.readDataSet(table).size() >= count);
     // wait and re-check
     try {
@@ -249,6 +259,6 @@ public class Utils {
     }
     var dataSet = sink.readDataSet(table);
     Assertions.assertEquals(count, dataSet.size());
-    helper.deleteConnector(connectorName);
+    helper.client.deleteConnector(connectorName);
   }
 }

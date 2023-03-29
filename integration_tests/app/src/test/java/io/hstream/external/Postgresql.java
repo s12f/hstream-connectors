@@ -66,34 +66,22 @@ public class Postgresql extends Jdbc {
   }
 
   @Override
-  public String createSinkConnectorSql(String name, String stream, String target) {
-    var options =
-        new Options()
+  public String getCreateConnectorConfig(String stream, String target) {
+    var cfg = Utils.mapper.createObjectNode()
             .put("user", user)
             .put("password", password)
             .put("host", Utils.getHostname())
             .put("port", service.getFirstMappedPort())
             .put("stream", stream)
             .put("database", db)
-            .put("table", target);
-    var sql = String.format("create sink connector %s to postgresql with (%s);", name, options);
-    log.info("create sink postgresql sql:{}", sql);
-    return sql;
+            .put("table", target)
+            .toString();
+    log.info("create postgresql connector with:{}", cfg);
+    return cfg;
   }
 
   @Override
-  public String createSourceConnectorSql(String name, String stream, String target) {
-    var options =
-        new Options()
-            .put("user", user)
-            .put("password", password)
-            .put("host", Utils.getHostname())
-            .put("port", service.getFirstMappedPort())
-            .put("stream", stream)
-            .put("database", db)
-            .put("table", target);
-    var sql = String.format("create source connector %s from postgresql with (%s);", name, options);
-    log.info("create source postgresql sql:{}", sql);
-    return sql;
+  public String getName() {
+    return "postgresql";
   }
 }

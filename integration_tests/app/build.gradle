@@ -16,6 +16,7 @@ plugins {
 
 repositories {
     // Use Maven Central for resolving dependencies.
+    mavenLocal()
     mavenCentral()
     maven {
         url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
@@ -29,13 +30,8 @@ dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:31.0.1-jre'
 
-    // grpc
     testCompileOnly("org.apache.tomcat:annotations-api:6.0.53") // necessary for java 9+
 
-    testImplementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.45.0'
-    testImplementation group: 'io.grpc', name: 'grpc-stub', version: '1.45.0'
-    testImplementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.45.0'
-    testImplementation group: 'io.grpc', name: 'grpc-netty', version: '1.45.0'
     testImplementation("com.google.protobuf:protobuf-java-util:3.17.3")
 
     // test containers
@@ -49,7 +45,7 @@ dependencies {
     testImplementation 'org.jooq:jooq:3.16.7'
 
     // HStreamDB Java Client
-    testImplementation 'io.hstream:hstreamdb-java:0.13.0'
+    testImplementation 'io.hstream:hstreamdb-java:0.14.0-SNAPSHOT'
 
     // lombok
     testCompileOnly 'org.projectlombok:lombok:1.18.24'
@@ -57,33 +53,6 @@ dependencies {
 
     // mongodb
     testImplementation 'org.mongodb:mongo-java-driver:3.12.11'
-}
-
-sourceSets {
-    test {
-        proto {
-            exclude("api/*")
-        }
-        java {
-            srcDirs 'build/generated/source/proto/test/grpc'
-        }
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.19.2"
-    }
-    plugins {
-        grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.45.0"
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-        }
-    }
 }
 
 tasks.named('test') {

@@ -54,6 +54,11 @@ public class Mysql extends Jdbc {
   }
 
   @Override
+  public String getName() {
+    return "mysql";
+  }
+
+  @Override
   public void close() {
     try {
       conn.close();
@@ -64,34 +69,17 @@ public class Mysql extends Jdbc {
   }
 
   @Override
-  public String createSinkConnectorSql(String name, String stream, String target) {
-    var options =
-        new Options()
+  public String getCreateConnectorConfig(String stream, String target) {
+    var cfg = Utils.mapper.createObjectNode()
             .put("user", "root")
             .put("password", "password")
             .put("host", Utils.getHostname())
             .put("port", service.getFirstMappedPort())
             .put("stream", stream)
             .put("database", db)
-            .put("table", target);
-    var sql = String.format("create sink connector %s to mysql with (%s);", name, options);
-    log.info("create sink mysql sql:{}", sql);
-    return sql;
-  }
-
-  @Override
-  public String createSourceConnectorSql(String name, String stream, String target) {
-    var options =
-        new Options()
-            .put("user", "root")
-            .put("password", "password")
-            .put("host", Utils.getHostname())
-            .put("port", service.getFirstMappedPort())
-            .put("stream", stream)
-            .put("database", db)
-            .put("table", target);
-    var sql = String.format("create source connector %s from mysql with (%s);", name, options);
-    log.info("create source mysql sql:{}", sql);
-    return sql;
+            .put("table", target)
+            .toString();
+    log.info("create mysql connector config:{}", cfg);
+    return cfg;
   }
 }

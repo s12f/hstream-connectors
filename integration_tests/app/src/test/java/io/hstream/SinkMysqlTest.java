@@ -34,6 +34,13 @@ public class SinkMysqlTest {
     Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.RAW_JSON);
   }
 
+  @Test
+  void testSpec() throws Exception {
+    var spec = helper.client.getConnectorSpec("SINK", "mysql");
+    log.info("spec:{}", spec);
+    Utils.mapper.readTree(spec);
+  }
+
   @AfterEach
   void tearDown() throws Exception {
     mysql.close();
