@@ -81,7 +81,8 @@ public class TaskRunner {
         }
         switch (jc.getParsedCommand()) {
             case "spec":
-                channel.send(task.spec());
+                System.out.println(task.spec());
+                System.out.flush();
                 break;
             case "check":
                 parseConfig(checkCmd.configPath);

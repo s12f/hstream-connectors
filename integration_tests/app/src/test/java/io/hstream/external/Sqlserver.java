@@ -103,23 +103,22 @@ public class Sqlserver extends Jdbc {
   }
 
   @Override
-  public String createSourceConnectorSql(String name, String stream, String target) {
-    var options =
-        new Options()
+  public String getCreateConnectorConfig(String stream, String target) {
+    var cfg = Utils.mapper.createObjectNode()
             .put("user", user)
             .put("password", password)
             .put("host", Utils.getHostname())
             .put("port", service.getFirstMappedPort())
             .put("stream", stream)
             .put("database", db)
-            .put("table", target);
-    var sql = String.format("create source connector %s from sqlserver with (%s);", name, options);
-    log.info("create source sqlserver sql:{}", sql);
-    return sql;
+            .put("table", target)
+            .toString();
+    log.info("create sqlserver connector config:{}", cfg);
+    return cfg;
   }
 
   @Override
-  public String createSinkConnectorSql(String name, String stream, String target) {
-    throw new RuntimeException("unimplemented connector: sink-sqlserver");
+  public String getName() {
+    return "sqlserver";
   }
 }
