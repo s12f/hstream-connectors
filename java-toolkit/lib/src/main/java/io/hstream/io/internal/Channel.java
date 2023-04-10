@@ -7,9 +7,8 @@ import java.util.function.Consumer;
 
 public interface Channel {
     // send a message to IO Runtime
-    void send(JsonNode msg);
     // send a message to IO Runtime and receive the response
-    CompletableFuture<JsonNode> call(JsonNode msg);
+    CompletableFuture<JsonNode> call(String name, JsonNode msg);
     // handle messages from IO Runtime
     void handle(Consumer<JsonNode> handler);
     void close();

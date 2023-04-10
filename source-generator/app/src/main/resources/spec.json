@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source-generator",
+  "description": "the configuration specification of source-generator",
+  "type": "object",
+  "properties": {
+    "stream": {
+      "title": "stream",
+      "description": "result stream",
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "title": "type",
+      "description": "generator type",
+      "type": "string",
+      "required": true,
+      "enum": ["sequence"]
+    },
+    "batchSize": {
+      "title": "batchSize",
+      "description": "batch size",
+      "type": "integer",
+      "required": true
+    },
+    "period": {
+      "title": "period",
+      "description": "write period",
+      "type": "integer",
+      "required": true
+    }
+  }
+}

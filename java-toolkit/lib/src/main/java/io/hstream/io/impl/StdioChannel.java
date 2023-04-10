@@ -2,7 +2,9 @@ package io.hstream.io.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hstream.io.ServerRequestName;
 import io.hstream.io.internal.Channel;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -15,28 +17,19 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StdioChannel implements Channel {
-    String CONNECTOR_CALL = "connector_call";
-    String CONNECTOR_SEND = "connector_send";
     final Map<String, CompletableFuture<JsonNode>> futures = new HashMap<>();
     AtomicBoolean closed = new AtomicBoolean(false);
     int maxResponseTimeout = 10;
 
     @Override
-    public void send(JsonNode msg) {
+    public CompletableFuture<JsonNode> call(String name, JsonNode msg) {
         var msgId = UUID.randomUUID().toString();
-        log.info("send message, id:{}, msg:{}", msgId, msg.toString());
-        writeMsg(CONNECTOR_SEND, msgId, msg);
-    }
-
-    @Override
-    public CompletableFuture<JsonNode> call(JsonNode msg) {
-        var msgId = UUID.randomUUID().toString();
-        log.info("call message, id:{}, msg:{}", msgId, msg.toString());
+        log.info("call message, id:{}, name:{}, msg:{}", msgId, name, msg.toString());
         var future = new CompletableFuture<JsonNode>();
         future.orTimeout(maxResponseTimeout, TimeUnit.SECONDS);
         synchronized (futures) {
             futures.put(msgId, future);
-            writeMsg(CONNECTOR_CALL, msgId, msg);
+            writeMsg(msgId, name, msg);
         }
         return future;
     }
@@ -57,8 +50,8 @@ public class StdioChannel implements Channel {
                 log.info("received line:{}", line);
                 try {
                     var msg = new ObjectMapper().readTree(line);
-                    var msgType = msg.get("type").asText();
-                    if (msgType.equals(CONNECTOR_CALL)) {
+                    var msgType = msg.get("name").asText();
+                    if (msgType.equals(ServerRequestName.ConnectorResponse.name())) {
                         var msgId = msg.get("id").asText();
                         synchronized (futures) {
                             var future = futures.get(msgId);
@@ -66,7 +59,7 @@ public class StdioChannel implements Channel {
                                 log.warn("future not found:{}", msgId);
                                 continue;
                             }
-                            future.complete(msg.get("message"));
+                            future.complete(msg.get("body"));
                             futures.remove(msgId);
                         }
                     } else {
@@ -82,11 +75,11 @@ public class StdioChannel implements Channel {
         }
     }
 
-    void writeMsg(String type, String msgId, JsonNode msg) {
+    void writeMsg(String msgId, String name, JsonNode msg) {
         var channelMessage = new ObjectMapper().createObjectNode()
-                .put("type", type)
+                .put("name", name)
                 .put("id", msgId)
-                .set("message", msg);
+                .set("body", msg);
         System.out.println(channelMessage.toString());
         System.out.flush();
     }

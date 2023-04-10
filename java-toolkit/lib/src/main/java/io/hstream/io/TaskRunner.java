@@ -15,6 +15,8 @@ import io.hstream.io.internal.Channel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.*;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Parameters(
@@ -57,14 +59,18 @@ public class TaskRunner {
     HRecord cfg;
     Task task;
     Channel channel;
+    Rpc rpc;
     KvStore kv;
+    static ObjectMapper mapper = new ObjectMapper();
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
 
     public void run(String[] args, Task task, TaskContext taskContext) {
         log.info("task runner started");
         this.task = task;
         this.ctx = taskContext;
         this.channel = new StdioChannel();
-        this.kv = new ChannelKvStore(channel);
+        this.rpc = new Rpc(channel);
+        this.kv = new ChannelKvStore(rpc);
         var checkCmd = new CheckCmd();
         var runCmd = new RunCmd();
         var jc = JCommander.newBuilder()
@@ -90,7 +96,8 @@ public class TaskRunner {
                 break;
             case "run":
                 parseConfig(runCmd.configPath);
-                new Thread(this::recvCmd).start();
+                executor.execute(this::recvCmd);
+                executor.scheduleAtFixedRate(this::report, 3, 3, TimeUnit.SECONDS);
                 var connectorConfig = cfg.getHRecord("connector");
                 try {
                     parseConfig(runCmd.configPath);
@@ -108,6 +115,7 @@ public class TaskRunner {
                     log.info("unexpected error when running connector:{}", e.getMessage());
                     e.printStackTrace(System.out);
                     Utils.runWithTimeout(3, this::stop);
+                    System.exit(1);
                 }
                 break;
             default:
@@ -153,10 +161,22 @@ public class TaskRunner {
         channel.handle(msg -> {
             var cmdType = msg.get("type").asText();
             if (cmdType.equals("stop")) {
-                Utils.runWithTimeout(3, this::stop);
+                Utils.runWithTimeout(1, this::stop);
                 System.exit(0);
             }
         });
+    }
+
+    public void report() {
+        log.info("reporting task information");
+        try {
+            rpc.report().get(5, TimeUnit.SECONDS);
+        } catch (ExecutionException | TimeoutException e) {
+            Utils.runWithTimeout(3, this::stop);
+            System.exit(1);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void stop() {
@@ -175,6 +195,7 @@ public class TaskRunner {
         log.info("stopped runner");
         try {
             kv.close();
+            channel.close();
         } catch (InterruptedException ignored) {}
     }
 }
