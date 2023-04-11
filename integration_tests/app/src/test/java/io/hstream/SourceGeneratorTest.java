@@ -2,10 +2,7 @@ package io.hstream;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.*;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
@@ -16,6 +13,12 @@ public class SourceGeneratorTest {
     @BeforeEach
     void setup(TestInfo testInfo) {
         helper = new HStreamHelper(testInfo);
+    }
+
+    @SneakyThrows
+    @AfterEach
+    void tearDown() {
+        helper.close();
     }
 
     @SneakyThrows
