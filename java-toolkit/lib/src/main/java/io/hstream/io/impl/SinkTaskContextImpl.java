@@ -1,6 +1,5 @@
 package io.hstream.io.impl;
 
-import com.google.common.base.Utf8;
 import io.hstream.Consumer;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;

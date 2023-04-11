@@ -130,9 +130,11 @@ public class HStreamService {
             " --io-connector-image \"source mysql hstreamdb/source-mysql:latest\"",
             " --io-connector-image \"source postgresql hstreamdb/source-postgresql:latest\"",
             " --io-connector-image \"source sqlserver hstreamdb/source-sqlserver:latest\"",
+            " --io-connector-image \"source generator hstreamdb/source-generator:latest\"",
             " --io-connector-image \"sink mysql hstreamdb/sink-mysql:latest\"",
             " --io-connector-image \"sink postgresql hstreamdb/sink-postgresql:latest\"",
             " --io-connector-image \"sink mongodb hstreamdb/sink-mongodb:latest\"",
+            " --io-connector-image \"sink blackhole hstreamdb/sink-blackhole:latest\"",
             " --io-connector-image \"source mongodb hstreamdb/source-mongodb:latest\""));
   }
 

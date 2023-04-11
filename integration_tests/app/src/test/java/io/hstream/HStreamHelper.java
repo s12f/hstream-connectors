@@ -12,7 +12,8 @@ public class HStreamHelper {
   public HStreamService service;
   public TestInfo testInfo;
 
-  HStreamHelper(TestInfo testInfo) throws Exception {
+  @SneakyThrows
+  HStreamHelper(TestInfo testInfo) {
     this.testInfo = testInfo;
     service = new HStreamService();
     service.start();
