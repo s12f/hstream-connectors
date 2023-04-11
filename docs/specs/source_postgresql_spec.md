@@ -2,8 +2,10 @@
 
 **Title:** source-postgresql
 
-| Type                      | `object`                                                                  |
+|                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
 **Description:** the configuration specification of source-postgresql
@@ -18,30 +20,36 @@
 | + [table](#table )       | No      | string  | No         | -          | Table Name        |
 | + [stream](#stream )     | No      | string  | No         | -          | stream name       |
 
-## <a name="user"></a>1. [Required] Property `user`
+## <a name="user"></a>1. Property `user`
 
 **Title:** User Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql user name
 
-## <a name="password"></a>2. [Required] Property `password`
+## <a name="password"></a>2. Property `password`
 
 **Title:** Password
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** password of the user
 
-## <a name="host"></a>3. [Required] Property `host`
+## <a name="host"></a>3. Property `host`
 
 **Title:** Hostname
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql hostname
 
@@ -51,12 +59,14 @@
 "127.0.0.1"
 ```
 
-## <a name="port"></a>4. [Required] Property `port`
+## <a name="port"></a>4. Property `port`
 
 **Title:** Port Number
 
-| Type | `integer` |
-| ---- | --------- |
+|              |           |
+| ------------ | --------- |
+| **Type**     | `integer` |
+| **Required** | Yes       |
 
 **Description:** postgresql port number
 
@@ -66,21 +76,25 @@
 5432
 ```
 
-## <a name="database"></a>5. [Required] Property `database`
+## <a name="database"></a>5. Property `database`
 
 **Title:** Database Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql database name
 
-## <a name="table"></a>6. [Required] Property `table`
+## <a name="table"></a>6. Property `table`
 
 **Title:** Table Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** table name of the database
 
@@ -94,12 +108,14 @@
 "public.t1"
 ```
 
-## <a name="stream"></a>7. [Required] Property `stream`
+## <a name="stream"></a>7. Property `stream`
 
 **Title:** stream name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** the target HStream stream name
 

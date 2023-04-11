@@ -2,8 +2,10 @@
 
 **Title:** sink-mongodb
 
-| Type                      | `object`                                                                  |
+|                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
 **Description:** the configuration specification of sink-mongodb
@@ -17,24 +19,30 @@
 | + [database](#database )     | No      | string | No         | -          | target database name            |
 | + [collection](#collection ) | No      | string | No         | -          | connection name of the database |
 
-## <a name="user"></a>1. [Optional] Property `user`
+## <a name="user"></a>1. Property `user`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
 
 **Description:** user name
 
-## <a name="password"></a>2. [Optional] Property `password`
+## <a name="password"></a>2. Property `password`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
 
 **Description:** password
 
-## <a name="hosts"></a>3. [Required] Property `hosts`
+## <a name="hosts"></a>3. Property `hosts`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** hosts
 
@@ -52,24 +60,30 @@
 "host1:1234,host2:1234"
 ```
 
-## <a name="stream"></a>4. [Required] Property `stream`
+## <a name="stream"></a>4. Property `stream`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** source HStream stream name
 
-## <a name="database"></a>5. [Required] Property `database`
+## <a name="database"></a>5. Property `database`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** target database name
 
-## <a name="collection"></a>6. [Required] Property `collection`
+## <a name="collection"></a>6. Property `collection`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** connection name of the database
 

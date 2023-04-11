@@ -2,6 +2,7 @@ hstreamdb/source-mysql
 hstreamdb/source-postgresql
 hstreamdb/source-sqlserver
 hstreamdb/source-mongodb
+hstreamdb/source-generator
 hstreamdb/sink-mysql
 hstreamdb/sink-postgresql
 hstreamdb/sink-mongodb

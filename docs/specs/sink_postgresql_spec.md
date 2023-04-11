@@ -2,8 +2,10 @@
 
 **Title:** sink-postgresql
 
-| Type                      | `object`                                                                  |
+|                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
 **Description:** the configuration specification of sink-postgresql
@@ -18,52 +20,66 @@
 | + [database](#database ) | No      | string  | No         | -          | target database name       |
 | + [table](#table )       | No      | string  | No         | -          | table name of the database |
 
-## <a name="user"></a>1. [Required] Property `user`
+## <a name="user"></a>1. Property `user`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql user
 
-## <a name="password"></a>2. [Required] Property `password`
+## <a name="password"></a>2. Property `password`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql password
 
-## <a name="host"></a>3. [Required] Property `host`
+## <a name="host"></a>3. Property `host`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** postgresql hostname
 
-## <a name="port"></a>4. [Required] Property `port`
+## <a name="port"></a>4. Property `port`
 
-| Type | `integer` |
-| ---- | --------- |
+|              |           |
+| ------------ | --------- |
+| **Type**     | `integer` |
+| **Required** | Yes       |
 
 **Description:** postgresql port
 
-## <a name="stream"></a>5. [Required] Property `stream`
+## <a name="stream"></a>5. Property `stream`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** source HStream stream name
 
-## <a name="database"></a>6. [Required] Property `database`
+## <a name="database"></a>6. Property `database`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** target database name
 
-## <a name="table"></a>7. [Required] Property `table`
+## <a name="table"></a>7. Property `table`
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** table name of the database
 

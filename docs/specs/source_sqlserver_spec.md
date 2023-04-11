@@ -2,8 +2,10 @@
 
 **Title:** source-sqlserver
 
-| Type                      | `object`                                                                  |
+|                           |                                                                           |
 | ------------------------- | ------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                  |
+| **Required**              | No                                                                        |
 | **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
 
 **Description:** the configuration specification of source-sqlserver
@@ -18,39 +20,47 @@
 | + [table](#table )       | No      | string  | No         | -          | Table Name        |
 | + [stream](#stream )     | No      | string  | No         | -          | Stream Name       |
 
-## <a name="user"></a>1. [Required] Property `user`
+## <a name="user"></a>1. Property `user`
 
 **Title:** user name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** sqlserver user name
 
-## <a name="password"></a>2. [Required] Property `password`
+## <a name="password"></a>2. Property `password`
 
 **Title:** password
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** sqlserver password
 
-## <a name="host"></a>3. [Required] Property `host`
+## <a name="host"></a>3. Property `host`
 
 **Title:** Hostname
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** sqlserver hostname
 
-## <a name="port"></a>4. [Required] Property `port`
+## <a name="port"></a>4. Property `port`
 
 **Title:** Port Number
 
-| Type | `integer` |
-| ---- | --------- |
+|              |           |
+| ------------ | --------- |
+| **Type**     | `integer` |
+| **Required** | Yes       |
 
 **Description:** sqlserver port number
 
@@ -60,21 +70,25 @@
 1433
 ```
 
-## <a name="database"></a>5. [Required] Property `database`
+## <a name="database"></a>5. Property `database`
 
 **Title:** Database Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** sqlserver database name
 
-## <a name="table"></a>6. [Required] Property `table`
+## <a name="table"></a>6. Property `table`
 
 **Title:** Table Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** table name of the database
 
@@ -88,12 +102,14 @@
 "dbo.t1"
 ```
 
-## <a name="stream"></a>7. [Required] Property `stream`
+## <a name="stream"></a>7. Property `stream`
 
 **Title:** Stream Name
 
-| Type | `string` |
-| ---- | -------- |
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
 
 **Description:** the target HStream stream name
 
