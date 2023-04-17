@@ -4,16 +4,20 @@ import io.hstream.BufferedProducer;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
 import io.hstream.io.KvStore;
+import io.hstream.io.ReportMessage;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SourceTaskContextImpl implements SourceTaskContext {
     HStreamClient client;
     Map<String, BufferedProducer> producers = new HashMap<>();
     KvStore kvStore;
+    AtomicInteger deliveredRecords = new AtomicInteger(0);
+    AtomicInteger deliveredBytes = new AtomicInteger(0);
 
     @Override
     public void init(HRecord cfg, KvStore kv) {
@@ -33,12 +37,29 @@ public class SourceTaskContextImpl implements SourceTaskContext {
             producer = client.newBufferedProducer().stream(sourceRecord.stream).build();
             producers.put(stream, producer);
         }
-        return producer.write(sourceRecord.record);
+        var record = sourceRecord.record;
+        var recordSize =  record.isRawRecord()
+                ? record.getRawRecord().length
+                : sourceRecord.record.getHRecord().getDelegate().getSerializedSize();
+        return producer.write(sourceRecord.record).whenComplete((r, e) -> {
+            if (e == null) {
+                deliveredRecords.incrementAndGet();
+                deliveredBytes.addAndGet(recordSize);
+            }
+        });
     }
 
     @Override
     public KvStore getKvStore() {
         return kvStore;
+    }
+
+    @Override
+    public ReportMessage getReportMessage() {
+        return ReportMessage.builder()
+                .deliveredRecords(deliveredRecords.get())
+                .deliveredBytes(deliveredBytes.get())
+                .build();
     }
 
     @Override

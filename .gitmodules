@@ -1,3 +1,0 @@
-[submodule "integration_tests/app/src/test/proto"]
-	path = integration_tests/app/src/test/proto
-	url = git@github.com:hstreamdb/protocol.git
