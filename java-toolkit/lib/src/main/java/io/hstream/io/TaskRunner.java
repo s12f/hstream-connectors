@@ -170,7 +170,7 @@ public class TaskRunner {
     public void report() {
         log.info("reporting task information");
         try {
-            rpc.report().get(5, TimeUnit.SECONDS);
+            rpc.report(ctx.getReportMessage()).get(5, TimeUnit.SECONDS);
         } catch (ExecutionException | TimeoutException e) {
             Utils.runWithTimeout(3, this::stop);
             System.exit(1);

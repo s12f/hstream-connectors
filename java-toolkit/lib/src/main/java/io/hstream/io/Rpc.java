@@ -2,7 +2,6 @@ package io.hstream.io;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.hstream.io.internal.Channel;
-import jdk.javadoc.doclet.Reporter;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,7 +26,8 @@ public class Rpc {
                 .thenApply(n -> n.isNull() ? null : n.asText());
     }
 
-    public CompletableFuture<Reporter> report() {
-        return channel.call(ConnectorRequestName.Report.name(), mapper.nullNode()).thenApply(c -> null);
+    public CompletableFuture<Void> report(ReportMessage reportMessage) {
+        var body = mapper.valueToTree(reportMessage);
+        return channel.call(ConnectorRequestName.Report.name(), body).thenApply(c -> null);
     }
 }
