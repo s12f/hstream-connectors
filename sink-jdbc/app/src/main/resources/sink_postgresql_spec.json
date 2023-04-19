@@ -4,34 +4,42 @@
   "description": "the configuration specification of sink-postgresql",
   "type": "object",
   "properties": {
-    "user": {
-      "description": "postgresql user",
-      "type": "string"
-    },
-    "password": {
-      "description": "postgresql password",
-      "type": "string"
+    "stream": {
+      "description": "source HStream stream name",
+      "type": "string",
+      "required": true
     },
     "host": {
       "description": "postgresql hostname",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "port": {
       "description": "postgresql port",
-      "type": "integer"
+      "type": "integer",
+      "default": 5432,
+      "required": true
     },
-    "stream": {
-      "description": "source HStream stream name",
-      "type": "string"
+    "user": {
+      "description": "postgresql user",
+      "type": "string",
+      "required": true
+    },
+    "password": {
+      "description": "postgresql password",
+      "type": "string",
+      "required": true
     },
     "database": {
       "description": "target database name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "table": {
       "description": "table name of the database",
-      "type": "string"
+      "type": "string",
+      "required": true
     }
   },
-  "required": [ "user", "password", "host", "port", "stream", "database", "table" ]
+  "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

@@ -8,6 +8,7 @@ import io.hstream.io.ReportMessage;
 import io.hstream.io.SourceRecord;
 import io.hstream.io.SourceTaskContext;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +60,7 @@ public class SourceTaskContextImpl implements SourceTaskContext {
         return ReportMessage.builder()
                 .deliveredRecords(deliveredRecords.get())
                 .deliveredBytes(deliveredBytes.get())
+                .offsets(List.of())
                 .build();
     }
 

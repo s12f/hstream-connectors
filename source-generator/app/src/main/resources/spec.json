@@ -15,19 +15,23 @@
       "description": "generator type",
       "type": "string",
       "required": true,
+      "default": "sequence",
       "enum": ["sequence"]
     },
     "batchSize": {
       "title": "batchSize",
       "description": "batch size",
       "type": "integer",
+      "default": 1,
       "required": true
     },
     "period": {
       "title": "period",
       "description": "write period",
       "type": "integer",
+      "default": 5,
       "required": true
     }
-  }
+  },
+  "ui:order": ["stream", "type", "batchSize", "period"]
 }

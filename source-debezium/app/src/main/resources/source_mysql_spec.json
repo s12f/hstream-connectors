@@ -4,43 +4,51 @@
   "description": "the configuration specification of source-mysql",
   "type": "object",
   "properties": {
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string",
+      "required": true
+    },
     "user": {
       "title": "User Name",
       "description": "mysql user name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "password": {
       "title": "Password",
       "description": "password of the user",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "host": {
       "description": "mysql hostname",
       "type": "string",
-      "examples": ["127.0.0.1", "localhost"]
+      "examples": ["127.0.0.1", "localhost"],
+      "required": true
     },
     "port": {
       "title": "Port Number",
       "description": "mysql port number",
       "type": "integer",
-      "examples": [3306]
+      "examples": [3306],
+      "default": 3306,
+      "required": true
     },
     "database": {
       "title": "Database Name",
       "description": "mysql database name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "table": {
       "title": "Table Name",
       "description": "table name of the database",
       "type": "string",
-      "examples": ["t1", "public.t1"]
-    },
-    "stream": {
-      "title": "Stream Name",
-      "description": "the target HStream stream name",
-      "type": "string"
+      "examples": ["t1", "public.t1"],
+      "required": true
     }
   },
-  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+  "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

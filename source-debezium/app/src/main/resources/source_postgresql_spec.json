@@ -4,44 +4,52 @@
   "description": "the configuration specification of source-postgresql",
   "type": "object",
   "properties": {
+    "stream": {
+      "title": "stream name",
+      "description": "the target HStream stream name",
+      "type": "string",
+      "required": true
+    },
     "user": {
       "title": "User Name",
       "description": "postgresql user name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "password": {
       "title": "Password",
       "description": "password of the user",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "host": {
       "title": "Hostname",
       "description": "postgresql hostname",
       "type": "string",
-      "examples": ["127.0.0.1"]
+      "examples": ["127.0.0.1"],
+      "required": true
     },
     "port": {
       "title": "Port Number",
       "description": "postgresql port number",
       "type": "integer",
-      "examples": [5432]
+      "examples": [5432],
+      "required": true,
+      "default": 5432
     },
     "database": {
       "title": "Database Name",
       "description": "postgresql database name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "table": {
       "title": "Table Name",
       "description": "table name of the database",
       "type": "string",
-      "examples": ["t1", "public.t1"]
-    },
-    "stream": {
-      "title": "stream name",
-      "description": "the target HStream stream name",
-      "type": "string"
+      "examples": ["t1", "public.t1"],
+      "required": true
     }
   },
-  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+  "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

@@ -6,8 +6,9 @@
   "properties": {
     "stream": {
       "description": "source HStream stream name",
-      "type": "string"
+      "type": "string",
+      "required": true
     }
   },
-  "required": [ "stream" ]
+  "ui:order": [ "stream" ]
 }

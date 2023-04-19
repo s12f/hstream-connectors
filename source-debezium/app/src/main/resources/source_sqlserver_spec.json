@@ -4,43 +4,50 @@
   "description": "the configuration specification of source-sqlserver",
   "type": "object",
   "properties": {
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string",
+      "required": true
+    },
     "user": {
       "title": "user name",
       "description": "sqlserver user name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "password": {
       "title": "password",
       "description": "sqlserver password",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "host": {
       "title": "Hostname",
       "description": "sqlserver hostname",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "port": {
       "title": "Port Number",
       "description": "sqlserver port number",
       "type": "integer",
-      "examples": [1433]
+      "examples": [1433],
+      "required": true
     },
     "database": {
       "title": "Database Name",
       "description": "sqlserver database name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "table": {
       "title": "Table Name",
       "description": "table name of the database",
       "type": "string",
-      "examples": ["t1", "dbo.t1"]
-    },
-    "stream": {
-      "title": "Stream Name",
-      "description": "the target HStream stream name",
-      "type": "string"
+      "examples": ["t1", "dbo.t1"],
+      "required": true
     }
   },
-  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+  "ui:order": [ "user", "password", "host", "port", "database", "table", "stream" ]
 }

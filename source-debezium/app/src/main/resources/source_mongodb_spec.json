@@ -4,36 +4,40 @@
   "description": "the configuration specification of source-mongodb",
   "type": "object",
   "properties": {
-    "user": {
-      "title": "User Name",
-      "description": "user name",
-      "type": "string"
-    },
-    "password": {
-      "title": "Password",
-      "description": "password of the user",
-      "type": "string"
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string",
+      "required": true
     },
     "hosts": {
       "description": "hosts",
       "type": "string",
-      "examples": ["host1", "host1:1234", "host1:1234,host2:1234"]
+      "examples": ["host1", "host1:1234", "host1:1234,host2:1234"],
+      "required": true
+    },
+    "user": {
+      "title": "User Name",
+      "description": "user name",
+      "type": "string",
+      "required": true
+    },
+    "password": {
+      "title": "Password", "description": "password of the user",
+      "type": "string"
     },
     "database": {
       "title": "Database Name",
       "description": "database name",
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "collection": {
       "title": "Connection Name",
       "description": "Connection name of the database",
-      "type": "string"
-    },
-    "stream": {
-      "title": "Stream Name",
-      "description": "the target HStream stream name",
-      "type": "string"
+      "type": "string",
+      "required": true
     }
   },
-  "required": [ "hosts", "database", "collection", "stream" ]
+  "ui:order": [ "stream", "hosts", "user", "password", "database", "collection"]
 }

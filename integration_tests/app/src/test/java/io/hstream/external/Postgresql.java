@@ -1,6 +1,5 @@
 package io.hstream.external;
 
-import io.hstream.Options;
 import io.hstream.Utils;
 import java.sql.Connection;
 import java.sql.DriverManager;
