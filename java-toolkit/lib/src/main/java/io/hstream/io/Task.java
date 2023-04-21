@@ -5,6 +5,10 @@ import io.hstream.HRecord;
 
 public interface Task {
     JsonNode spec();
-    default void check(HRecord config) {}
+    default CheckResult check(HRecord config) {
+        return CheckResult.builder()
+                .result(true)
+                .build();
+    }
     void stop();
 }

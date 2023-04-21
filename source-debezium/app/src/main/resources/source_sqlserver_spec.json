@@ -4,6 +4,11 @@
   "description": "the configuration specification of source-sqlserver",
   "type": "object",
   "properties": {
+    "stream": {
+      "title": "Stream Name",
+      "description": "the target HStream stream name",
+      "type": "string"
+    },
     "user": {
       "title": "user name",
       "description": "sqlserver user name",
@@ -35,12 +40,8 @@
       "description": "table name of the database",
       "type": "string",
       "examples": ["t1", "dbo.t1"]
-    },
-    "stream": {
-      "title": "Stream Name",
-      "description": "the target HStream stream name",
-      "type": "string"
     }
   },
-  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+  "required": [ "user", "password", "host", "port", "database", "table", "stream" ],
+  "ui:order": [ "user", "password", "host", "port", "database", "table", "stream" ]
 }

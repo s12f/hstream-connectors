@@ -1,5 +1,7 @@
 package io.hstream.io.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.hstream.Consumer;
 import io.hstream.HRecord;
 import io.hstream.HStreamClient;
@@ -11,14 +13,18 @@ import io.hstream.io.SinkTaskContext;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
+    static ObjectMapper mapper = new ObjectMapper();
     HRecord cfg;
     HStreamClient client;
     Consumer consumer;
     KvStore kv;
+    String subId;
     AtomicInteger deliveredRecords = new AtomicInteger(0);
     AtomicInteger deliveredBytes = new AtomicInteger(0);
 
@@ -30,9 +36,22 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     @Override
     public ReportMessage getReportMessage() {
         return ReportMessage.builder()
-                .deliveredRecords(deliveredRecords.get())
-                .deliveredBytes(deliveredBytes.get())
+                .deliveredRecords(deliveredBytes.getAndSet(0))
+                .deliveredBytes(deliveredBytes.getAndSet(0))
+                .offsets(getSubscriptionOffsets())
                 .build();
+    }
+
+    List<JsonNode> getSubscriptionOffsets() {
+        if (subId == null) {
+            return List.of();
+        }
+        return client.getSubscription(subId).getOffsets()
+                .stream()
+                .map(offset -> mapper.createObjectNode()
+                        .put("shardId", offset.getShardId())
+                        .put("batchId", offset.getBatchId()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -52,7 +71,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         var taskId = cfg.getString("task");
         var cCfg = cfg.getHRecord("connector");
         var stream = cCfg.getString("stream");
-        var subId = kv.get("hstream_subscription_id").join();
+        subId = kv.get("hstream_subscription_id").join();
         if (subId == null) {
             subId = "connector_sub_" + taskId;
             var sub = Subscription.newBuilder().

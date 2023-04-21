@@ -29,11 +29,6 @@ abstract class DebeziumSourceTask implements SourceTask {
 
     @Override
     public void run(HRecord cfg, SourceTaskContext ctx) {
-        try {
-            System.out.println("cfg:" + cfg.toJsonString());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         this.ctx = ctx;
         props.setProperty("name", "engine");
         OffsetBackingStore.setKvStore(ctx.getKvStore());

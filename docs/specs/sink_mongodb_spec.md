@@ -12,32 +12,23 @@
 
 | Property                     | Pattern | Type   | Deprecated | Definition | Title/Description               |
 | ---------------------------- | ------- | ------ | ---------- | ---------- | ------------------------------- |
+| + [stream](#stream )         | No      | string | No         | -          | source HStream stream name      |
+| + [hosts](#hosts )           | No      | string | No         | -          | hosts                           |
 | - [user](#user )             | No      | string | No         | -          | user name                       |
 | - [password](#password )     | No      | string | No         | -          | password                        |
-| + [hosts](#hosts )           | No      | string | No         | -          | hosts                           |
-| + [stream](#stream )         | No      | string | No         | -          | source HStream stream name      |
 | + [database](#database )     | No      | string | No         | -          | target database name            |
 | + [collection](#collection ) | No      | string | No         | -          | connection name of the database |
 
-## <a name="user"></a>1. Property `user`
+## <a name="stream"></a>1. Property `stream`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | No       |
+| **Required** | Yes      |
 
-**Description:** user name
+**Description:** source HStream stream name
 
-## <a name="password"></a>2. Property `password`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-**Description:** password
-
-## <a name="hosts"></a>3. Property `hosts`
+## <a name="hosts"></a>2. Property `hosts`
 
 |              |          |
 | ------------ | -------- |
@@ -60,14 +51,23 @@
 "host1:1234,host2:1234"
 ```
 
-## <a name="stream"></a>4. Property `stream`
+## <a name="user"></a>3. Property `user`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | Yes      |
+| **Required** | No       |
 
-**Description:** source HStream stream name
+**Description:** user name
+
+## <a name="password"></a>4. Property `password`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** password
 
 ## <a name="database"></a>5. Property `database`
 

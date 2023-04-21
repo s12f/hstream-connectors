@@ -4,12 +4,8 @@
   "description": "the configuration specification of sink-mongodb",
   "type": "object",
   "properties": {
-    "user": {
-      "description": "user name",
-      "type": "string"
-    },
-    "password": {
-      "description": "password",
+    "stream": {
+      "description": "source HStream stream name",
       "type": "string"
     },
     "hosts": {
@@ -17,8 +13,12 @@
       "type": "string",
       "examples": ["host1", "host1:1234", "host1:1234,host2:1234"]
     },
-    "stream": {
-      "description": "source HStream stream name",
+    "user": {
+      "description": "user name",
+      "type": "string"
+    },
+    "password": {
+      "description": "password",
       "type": "string"
     },
     "database": {
@@ -30,5 +30,6 @@
       "type": "string"
     }
   },
-  "required": [ "hosts", "stream", "database", "collection" ]
+  "required": [ "stream", "hosts", "database", "collection" ],
+  "ui:order": [ "stream", "hosts", "user", "password", "database", "collection" ]
 }

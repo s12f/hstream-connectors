@@ -4,6 +4,11 @@
   "description": "the configuration specification of source-postgresql",
   "type": "object",
   "properties": {
+    "stream": {
+      "title": "stream name",
+      "description": "the target HStream stream name",
+      "type": "string"
+    },
     "user": {
       "title": "User Name",
       "description": "postgresql user name",
@@ -24,7 +29,8 @@
       "title": "Port Number",
       "description": "postgresql port number",
       "type": "integer",
-      "examples": [5432]
+      "examples": [5432],
+      "default": 5432
     },
     "database": {
       "title": "Database Name",
@@ -36,12 +42,8 @@
       "description": "table name of the database",
       "type": "string",
       "examples": ["t1", "public.t1"]
-    },
-    "stream": {
-      "title": "stream name",
-      "description": "the target HStream stream name",
-      "type": "string"
     }
   },
-  "required": [ "user", "password", "host", "port", "database", "table", "stream" ]
+  "required": [ "stream", "host", "port", "user", "password", "database", "table" ],
+  "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

@@ -35,6 +35,7 @@ public class PostgresqlSinkTask extends JdbcSinkTask {
         primaryKeys = Utils.getPrimaryKey(conn, table);
     }
 
+    @Override
     public Connection getConn() {
         Properties connectionProps = new Properties();
         connectionProps.put("user", user);

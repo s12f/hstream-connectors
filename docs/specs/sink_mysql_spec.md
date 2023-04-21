@@ -12,33 +12,24 @@
 
 | Property                 | Pattern | Type    | Deprecated | Definition | Title/Description          |
 | ------------------------ | ------- | ------- | ---------- | ---------- | -------------------------- |
-| + [user](#user )         | No      | string  | No         | -          | mysql user                 |
-| + [password](#password ) | No      | string  | No         | -          | mysql password             |
+| + [stream](#stream )     | No      | string  | No         | -          | source HStream stream name |
 | + [host](#host )         | No      | string  | No         | -          | mysql hostname             |
 | + [port](#port )         | No      | integer | No         | -          | mysql port                 |
-| + [stream](#stream )     | No      | string  | No         | -          | source HStream stream name |
+| + [user](#user )         | No      | string  | No         | -          | mysql user                 |
+| + [password](#password ) | No      | string  | No         | -          | mysql password             |
 | + [database](#database ) | No      | string  | No         | -          | target database name       |
 | + [table](#table )       | No      | string  | No         | -          | table name of the database |
 
-## <a name="user"></a>1. Property `user`
+## <a name="stream"></a>1. Property `stream`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | Yes      |
 
-**Description:** mysql user
+**Description:** source HStream stream name
 
-## <a name="password"></a>2. Property `password`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-**Description:** mysql password
-
-## <a name="host"></a>3. Property `host`
+## <a name="host"></a>2. Property `host`
 
 |              |          |
 | ------------ | -------- |
@@ -47,23 +38,33 @@
 
 **Description:** mysql hostname
 
-## <a name="port"></a>4. Property `port`
+## <a name="port"></a>3. Property `port`
 
 |              |           |
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+| **Default**  | `3306`    |
 
 **Description:** mysql port
 
-## <a name="stream"></a>5. Property `stream`
+## <a name="user"></a>4. Property `user`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | Yes      |
 
-**Description:** source HStream stream name
+**Description:** mysql user
+
+## <a name="password"></a>5. Property `password`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** mysql password
 
 ## <a name="database"></a>6. Property `database`
 

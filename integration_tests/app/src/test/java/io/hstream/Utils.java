@@ -19,6 +19,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.containers.GenericContainer;
@@ -223,6 +225,7 @@ public class Utils {
     KEY_VALUE
   }
 
+  @SneakyThrows
   public static void testSinkFullSync(HStreamHelper helper, Sink sink, IORecordType recordType) {
     var streamName = "stream01";
     var connectorName = "sk1";
@@ -259,6 +262,9 @@ public class Utils {
     }
     var dataSet = sink.readDataSet(table);
     Assertions.assertEquals(count, dataSet.size());
+    // Thread.sleep(10000);
+    // log.info("getConnector offsets:{}", helper.client.getConnector(connectorName).offsets);
+    log.info("connector logs:{}", helper.client.getConnectorLogs(connectorName, 5, 10));
     helper.client.deleteConnector(connectorName);
   }
 }

@@ -9,5 +9,6 @@
       "type": "string"
     }
   },
-  "required": [ "stream" ]
+  "required": ["stream"],
+  "ui:order": [ "stream" ]
 }
