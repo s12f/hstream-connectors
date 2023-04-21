@@ -2,7 +2,6 @@ package sink.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
-import io.hstream.io.SinkTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SinkTaskContextImpl;
 import java.sql.Connection;
@@ -34,6 +33,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
         this.primaryKeys = Utils.getPrimaryKey(conn, table);
     }
 
+    @Override
     public Connection getConn() {
         Properties connectionProps = new Properties();
         connectionProps.put("user", user);

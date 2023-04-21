@@ -7,14 +7,12 @@
     "stream": {
       "title": "stream",
       "description": "result stream",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "type": {
       "title": "type",
       "description": "generator type",
       "type": "string",
-      "required": true,
       "default": "sequence",
       "enum": ["sequence"]
     },
@@ -22,16 +20,15 @@
       "title": "batchSize",
       "description": "batch size",
       "type": "integer",
-      "default": 1,
-      "required": true
+      "default": 1
     },
     "period": {
       "title": "period",
       "description": "write period",
       "type": "integer",
-      "default": 5,
-      "required": true
+      "default": 5
     }
   },
+  "required": ["stream", "type", "batchSize", "period"],
   "ui:order": ["stream", "type", "batchSize", "period"]
 }

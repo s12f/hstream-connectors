@@ -12,11 +12,14 @@ import io.hstream.HRecord;
 import io.hstream.io.impl.ChannelKvStore;
 import io.hstream.io.impl.StdioChannel;
 import io.hstream.io.internal.Channel;
+
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.*;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Parameters(
@@ -64,6 +67,7 @@ public class TaskRunner {
     static ObjectMapper mapper = new ObjectMapper();
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
 
+    @SneakyThrows
     public void run(String[] args, Task task, TaskContext taskContext) {
         log.info("task runner started");
         this.task = task;
@@ -92,7 +96,9 @@ public class TaskRunner {
                 break;
             case "check":
                 parseConfig(checkCmd.configPath);
-                check(task);
+                var result = check(task);
+                System.out.println(mapper.writeValueAsString(result));
+                System.out.flush();
                 break;
             case "run":
                 parseConfig(runCmd.configPath);
@@ -111,37 +117,32 @@ public class TaskRunner {
                         var stc = (SinkTaskContext) taskContext;
                         st.run(connectorConfig, stc);
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.info("unexpected error when running connector:{}", e.getMessage());
-                    e.printStackTrace(System.out);
-                    Utils.runWithTimeout(3, this::stop);
+                    e.printStackTrace();
                     System.exit(1);
                 }
                 break;
             default:
                 log.error("invalid cmd:{}", jc.getParsedCommand());
         }
+        System.exit(0);
     }
 
-    void check(Task task) {
+    CheckResult check(Task task) {
+        // check schema
         var schema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(task.spec());
         var errors = schema.validate(cfgNode.get("connector"));
-        var mapper = new ObjectMapper();
-        if (errors.size() == 0) {
-            var msg = mapper.createObjectNode()
-                    .put("result", true)
-                    .put("message", "ok");
-            System.out.println(msg);
-//            channel.send(msg);
-        } else {
-            log.info("check failed:{}", errors);
-            var msg = mapper.createObjectNode()
-                    .put("result", false)
-                    .put("message", "config check failed:" + errors);
-            System.out.println(msg);
-//            channel.send(msg);
+        if (errors.size() != 0) {
+            return CheckResult.builder()
+                    .result(false)
+                    .type(CheckResult.CheckResultType.CONFIG)
+                    .message("invalid config")
+                    .detail(mapper.valueToTree(errors))
+                    .build();
         }
-        System.out.flush();
+        // task check
+        return task.check(cfg);
     }
 
     void parseConfig(String cfgPath) {
@@ -159,7 +160,7 @@ public class TaskRunner {
     public void recvCmd() {
         log.info("receiving commands");
         channel.handle(msg -> {
-            var cmdType = msg.get("type").asText();
+            var cmdType = msg.get("name").asText();
             if (cmdType.equals("stop")) {
                 Utils.runWithTimeout(1, this::stop);
                 System.exit(0);
@@ -171,11 +172,10 @@ public class TaskRunner {
         log.info("reporting task information");
         try {
             rpc.report(ctx.getReportMessage()).get(5, TimeUnit.SECONDS);
-        } catch (ExecutionException | TimeoutException e) {
-            Utils.runWithTimeout(3, this::stop);
+        } catch (Throwable e) {
+            log.info("report exited:{}", e.getMessage());
+            e.printStackTrace();
             System.exit(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 

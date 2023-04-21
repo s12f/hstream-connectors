@@ -6,40 +6,34 @@
   "properties": {
     "stream": {
       "description": "source HStream stream name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "host": {
       "description": "postgresql hostname",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "port": {
       "description": "postgresql port",
       "type": "integer",
-      "default": 5432,
-      "required": true
+      "default": 5432
     },
     "user": {
       "description": "postgresql user",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "password": {
       "description": "postgresql password",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "database": {
       "description": "target database name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "table": {
       "description": "table name of the database",
-      "type": "string",
-      "required": true
+      "type": "string"
     }
   },
+  "required": [ "stream", "host", "port", "user", "password", "database", "table" ],
   "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

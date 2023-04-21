@@ -7,49 +7,43 @@
     "stream": {
       "title": "stream name",
       "description": "the target HStream stream name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "user": {
       "title": "User Name",
       "description": "postgresql user name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "password": {
       "title": "Password",
       "description": "password of the user",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "host": {
       "title": "Hostname",
       "description": "postgresql hostname",
       "type": "string",
-      "examples": ["127.0.0.1"],
-      "required": true
+      "examples": ["127.0.0.1"]
     },
     "port": {
       "title": "Port Number",
       "description": "postgresql port number",
       "type": "integer",
       "examples": [5432],
-      "required": true,
       "default": 5432
     },
     "database": {
       "title": "Database Name",
       "description": "postgresql database name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "table": {
       "title": "Table Name",
       "description": "table name of the database",
       "type": "string",
-      "examples": ["t1", "public.t1"],
-      "required": true
+      "examples": ["t1", "public.t1"]
     }
   },
+  "required": [ "stream", "host", "port", "user", "password", "database", "table" ],
   "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

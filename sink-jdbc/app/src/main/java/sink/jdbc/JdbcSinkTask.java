@@ -3,9 +3,12 @@ package sink.jdbc;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import io.hstream.HRecord;
+import io.hstream.io.CheckResult;
 import io.hstream.io.SinkRecord;
 import io.hstream.io.SinkTask;
 import io.hstream.io.SinkTaskContext;
+
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -137,10 +140,35 @@ abstract public class JdbcSinkTask implements SinkTask {
         return m;
     }
 
+    @Override
+    public CheckResult check(HRecord config) {
+        try {
+            init(config.getHRecord("connector"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+            log.info("check failed, {}", e.getMessage());
+            return CheckResult.builder()
+                    .result(false)
+                    .type(CheckResult.CheckResultType.CONNECTION)
+                    .message("get connector failed")
+                    .build();
+        }
+        if (getPrimaryKeys().isEmpty()) {
+            return CheckResult.builder()
+                    .result(false)
+                    .type(CheckResult.CheckResultType.KEYS)
+                    .message("table/primary keys not found")
+                    .build();
+        }
+        return CheckResult.ok();
+    }
+
+
     abstract void init(HRecord cfg);
     abstract PreparedStatement getUpsertStmt(List<String> fields, List<String> keys);
     abstract PreparedStatement getDeleteStmt(List<String> keys);
     abstract List<String> getPrimaryKeys();
+    abstract Connection getConn();
 
     @Override
     public void stop() {}

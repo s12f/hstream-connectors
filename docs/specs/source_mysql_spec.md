@@ -12,15 +12,26 @@
 
 | Property                 | Pattern | Type    | Deprecated | Definition | Title/Description |
 | ------------------------ | ------- | ------- | ---------- | ---------- | ----------------- |
+| + [stream](#stream )     | No      | string  | No         | -          | Stream Name       |
 | + [user](#user )         | No      | string  | No         | -          | User Name         |
 | + [password](#password ) | No      | string  | No         | -          | Password          |
 | + [host](#host )         | No      | string  | No         | -          | mysql hostname    |
 | + [port](#port )         | No      | integer | No         | -          | Port Number       |
 | + [database](#database ) | No      | string  | No         | -          | Database Name     |
 | + [table](#table )       | No      | string  | No         | -          | Table Name        |
-| + [stream](#stream )     | No      | string  | No         | -          | Stream Name       |
 
-## <a name="user"></a>1. Property `user`
+## <a name="stream"></a>1. Property `stream`
+
+**Title:** Stream Name
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** the target HStream stream name
+
+## <a name="user"></a>2. Property `user`
 
 **Title:** User Name
 
@@ -31,7 +42,7 @@
 
 **Description:** mysql user name
 
-## <a name="password"></a>2. Property `password`
+## <a name="password"></a>3. Property `password`
 
 **Title:** Password
 
@@ -42,7 +53,7 @@
 
 **Description:** password of the user
 
-## <a name="host"></a>3. Property `host`
+## <a name="host"></a>4. Property `host`
 
 |              |          |
 | ------------ | -------- |
@@ -61,7 +72,7 @@
 "localhost"
 ```
 
-## <a name="port"></a>4. Property `port`
+## <a name="port"></a>5. Property `port`
 
 **Title:** Port Number
 
@@ -69,6 +80,7 @@
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+| **Default**  | `3306`    |
 
 **Description:** mysql port number
 
@@ -78,7 +90,7 @@
 3306
 ```
 
-## <a name="database"></a>5. Property `database`
+## <a name="database"></a>6. Property `database`
 
 **Title:** Database Name
 
@@ -89,7 +101,7 @@
 
 **Description:** mysql database name
 
-## <a name="table"></a>6. Property `table`
+## <a name="table"></a>7. Property `table`
 
 **Title:** Table Name
 
@@ -109,16 +121,5 @@
 ```json
 "public.t1"
 ```
-
-## <a name="stream"></a>7. Property `stream`
-
-**Title:** Stream Name
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-**Description:** the target HStream stream name
 
 ----------------------------------------------------------------------------------------------------------------------------

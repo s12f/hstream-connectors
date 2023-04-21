@@ -6,40 +6,34 @@
   "properties": {
     "stream": {
       "description": "source HStream stream name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "host": {
       "description": "mysql hostname",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "port": {
       "description": "mysql port",
       "type": "integer",
-      "default": 3306,
-      "required": true
+      "default": 3306
     },
     "user": {
       "description": "mysql user",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "password": {
       "description": "mysql password",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "database": {
       "description": "target database name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "table": {
       "description": "table name of the database",
-      "type": "string",
-      "required": true
+      "type": "string"
     }
   },
+  "required": [ "stream", "host", "port", "user", "password", "database", "table" ],
   "ui:order": [ "stream", "host", "port", "user", "password", "database", "table" ]
 }

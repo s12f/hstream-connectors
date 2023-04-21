@@ -12,10 +12,10 @@
 
 | Property                   | Pattern | Type             | Deprecated | Definition | Title/Description |
 | -------------------------- | ------- | ---------------- | ---------- | ---------- | ----------------- |
-| - [stream](#stream )       | No      | string           | No         | -          | stream            |
-| - [type](#type )           | No      | enum (of string) | No         | -          | type              |
-| - [batchSize](#batchSize ) | No      | integer          | No         | -          | batchSize         |
-| - [period](#period )       | No      | integer          | No         | -          | period            |
+| + [stream](#stream )       | No      | string           | No         | -          | stream            |
+| + [type](#type )           | No      | enum (of string) | No         | -          | type              |
+| + [batchSize](#batchSize ) | No      | integer          | No         | -          | batchSize         |
+| + [period](#period )       | No      | integer          | No         | -          | period            |
 
 ## <a name="stream"></a>1. Property `stream`
 
@@ -24,7 +24,7 @@
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | No       |
+| **Required** | Yes      |
 
 **Description:** result stream
 
@@ -35,7 +35,8 @@
 |              |                    |
 | ------------ | ------------------ |
 | **Type**     | `enum (of string)` |
-| **Required** | No                 |
+| **Required** | Yes                |
+| **Default**  | `"sequence"`       |
 
 **Description:** generator type
 
@@ -49,7 +50,8 @@ Must be one of:
 |              |           |
 | ------------ | --------- |
 | **Type**     | `integer` |
-| **Required** | No        |
+| **Required** | Yes       |
+| **Default**  | `1`       |
 
 **Description:** batch size
 
@@ -60,7 +62,8 @@ Must be one of:
 |              |           |
 | ------------ | --------- |
 | **Type**     | `integer` |
-| **Required** | No        |
+| **Required** | Yes       |
+| **Default**  | `5`       |
 
 **Description:** write period
 

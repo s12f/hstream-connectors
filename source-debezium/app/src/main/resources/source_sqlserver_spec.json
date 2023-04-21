@@ -7,47 +7,41 @@
     "stream": {
       "title": "Stream Name",
       "description": "the target HStream stream name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "user": {
       "title": "user name",
       "description": "sqlserver user name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "password": {
       "title": "password",
       "description": "sqlserver password",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "host": {
       "title": "Hostname",
       "description": "sqlserver hostname",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "port": {
       "title": "Port Number",
       "description": "sqlserver port number",
       "type": "integer",
-      "examples": [1433],
-      "required": true
+      "examples": [1433]
     },
     "database": {
       "title": "Database Name",
       "description": "sqlserver database name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "table": {
       "title": "Table Name",
       "description": "table name of the database",
       "type": "string",
-      "examples": ["t1", "dbo.t1"],
-      "required": true
+      "examples": ["t1", "dbo.t1"]
     }
   },
+  "required": [ "user", "password", "host", "port", "database", "table", "stream" ],
   "ui:order": [ "user", "password", "host", "port", "database", "table", "stream" ]
 }

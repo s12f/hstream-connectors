@@ -6,14 +6,12 @@
   "properties": {
     "stream": {
       "description": "source HStream stream name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "hosts": {
       "description": "hosts",
       "type": "string",
-      "examples": ["host1", "host1:1234", "host1:1234,host2:1234"],
-      "required": true
+      "examples": ["host1", "host1:1234", "host1:1234,host2:1234"]
     },
     "user": {
       "description": "user name",
@@ -25,14 +23,13 @@
     },
     "database": {
       "description": "target database name",
-      "type": "string",
-      "required": true
+      "type": "string"
     },
     "collection": {
       "description": "connection name of the database",
-      "type": "string",
-      "required": true
+      "type": "string"
     }
   },
+  "required": [ "stream", "hosts", "database", "collection" ],
   "ui:order": [ "stream", "hosts", "user", "password", "database", "collection" ]
 }

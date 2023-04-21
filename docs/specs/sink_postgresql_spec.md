@@ -12,33 +12,24 @@
 
 | Property                 | Pattern | Type    | Deprecated | Definition | Title/Description          |
 | ------------------------ | ------- | ------- | ---------- | ---------- | -------------------------- |
-| + [user](#user )         | No      | string  | No         | -          | postgresql user            |
-| + [password](#password ) | No      | string  | No         | -          | postgresql password        |
+| + [stream](#stream )     | No      | string  | No         | -          | source HStream stream name |
 | + [host](#host )         | No      | string  | No         | -          | postgresql hostname        |
 | + [port](#port )         | No      | integer | No         | -          | postgresql port            |
-| + [stream](#stream )     | No      | string  | No         | -          | source HStream stream name |
+| + [user](#user )         | No      | string  | No         | -          | postgresql user            |
+| + [password](#password ) | No      | string  | No         | -          | postgresql password        |
 | + [database](#database ) | No      | string  | No         | -          | target database name       |
 | + [table](#table )       | No      | string  | No         | -          | table name of the database |
 
-## <a name="user"></a>1. Property `user`
+## <a name="stream"></a>1. Property `stream`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | Yes      |
 
-**Description:** postgresql user
+**Description:** source HStream stream name
 
-## <a name="password"></a>2. Property `password`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | Yes      |
-
-**Description:** postgresql password
-
-## <a name="host"></a>3. Property `host`
+## <a name="host"></a>2. Property `host`
 
 |              |          |
 | ------------ | -------- |
@@ -47,23 +38,33 @@
 
 **Description:** postgresql hostname
 
-## <a name="port"></a>4. Property `port`
+## <a name="port"></a>3. Property `port`
 
 |              |           |
 | ------------ | --------- |
 | **Type**     | `integer` |
 | **Required** | Yes       |
+| **Default**  | `5432`    |
 
 **Description:** postgresql port
 
-## <a name="stream"></a>5. Property `stream`
+## <a name="user"></a>4. Property `user`
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | Yes      |
 
-**Description:** source HStream stream name
+**Description:** postgresql user
+
+## <a name="password"></a>5. Property `password`
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** postgresql password
 
 ## <a name="database"></a>6. Property `database`
 
