@@ -36,7 +36,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     @Override
     public ReportMessage getReportMessage() {
         return ReportMessage.builder()
-                .deliveredRecords(deliveredBytes.getAndSet(0))
+                .deliveredRecords(deliveredRecords.getAndSet(0))
                 .deliveredBytes(deliveredBytes.getAndSet(0))
                 .offsets(getSubscriptionOffsets())
                 .build();
