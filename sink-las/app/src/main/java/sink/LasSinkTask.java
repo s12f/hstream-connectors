@@ -1,0 +1,119 @@
+package sink;
+
+import com.bytedance.las.tunnel.ActionType;
+import com.bytedance.las.tunnel.TableTunnel;
+import com.bytedance.las.tunnel.TunnelConfig;
+import com.bytedance.las.tunnel.authentication.AkSkAccount;
+import com.bytedance.las.tunnel.data.PartitionSpec;
+import com.bytedance.las.tunnel.session.StreamUploadSession;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.hstream.HRecord;
+import io.hstream.io.*;
+import io.hstream.io.impl.SinkTaskContextImpl;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+
+import java.util.List;
+
+import static com.bytedance.las.tunnel.ActionType.*;
+import static com.bytedance.las.tunnel.TunnelConfig.SERVICE_REGION;
+
+@Slf4j
+public class LasSinkTask implements SinkTask {
+    HRecord cfg;
+    StreamUploadSession session;
+    Schema schema;
+
+    @SneakyThrows
+    @Override
+    public void run(HRecord cfg, SinkTaskContext ctx) {
+        this.cfg = cfg;
+        init();
+        // config
+        ctx.handle((stream, records) -> handleWithException(records));
+    }
+
+    @SneakyThrows
+    void init() {
+        var accessId = cfg.getString("accessId");
+        var accessKey = cfg.getString("accessKey");
+        var endpoint = cfg.getString("endpoint");
+        var region = cfg.getString("region");
+        var db = cfg.getString("database");
+        var table = cfg.getString("table");
+        var actionType = getActionType(cfg.getString("mode"));
+        TunnelConfig tunnelConfig = new TunnelConfig.Builder()
+                .config(SERVICE_REGION, region)
+                .build();
+        var account = new AkSkAccount(accessId, accessKey);
+        TableTunnel tableTunnel = new TableTunnel(account, tunnelConfig);
+        tableTunnel.setEndPoint(endpoint);
+        log.info("creating upload session");
+        session = tableTunnel.createStreamUploadSession(db, table, PartitionSpec.SELF_ADAPTER, actionType);
+        log.info("created upload session");
+        schema = session.getFullSchema();
+        log.info("schema:{}", schema);
+    }
+
+    void clean() {
+        session = null;
+    }
+
+    void handleWithException(List<SinkRecord> records) {
+        try {
+            if (session == null) {
+                init();
+            }
+            handle(records);
+        } catch (Throwable e) {
+            clean();
+            throw e;
+        }
+    }
+
+    @SneakyThrows
+    void handle(List<SinkRecord> records) {
+        var recordWriter = session.openRecordWriter(/*blockId*/0);
+        for (var r : records) {
+            recordWriter.write(convertRecord(r.record));
+        }
+        recordWriter.close();
+        session.commit(List.of(0L), List.of(recordWriter.getAttemptId()));
+    }
+
+    GenericData.Record convertRecord(HRecord hRecord) {
+        var r = new GenericData.Record(schema);
+        for (var entry : Utils.hRecordToMap(hRecord).entrySet()) {
+            r.put(entry.getKey(), entry.getValue());
+        }
+        return r;
+    }
+
+    static ActionType getActionType(String mode) {
+        switch (mode.toUpperCase()) {
+            case "INSERT":
+                return INSERT;
+            case "OVERWRITE_INSERT":
+                return OVERWRITE_INSERT;
+            default:
+                return UPSERT;
+        }
+    }
+
+    @Override
+    public JsonNode spec() {
+        return Utils.getSpec(this, "/spec.json");
+    }
+
+    @SneakyThrows
+    @Override
+    public void stop() {
+        session.close();
+    }
+
+    public static void main(String[] args) {
+        new TaskRunner().run(args, new LasSinkTask(), new SinkTaskContextImpl());
+    }
+}

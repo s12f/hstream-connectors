@@ -4,13 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SinkTaskContextImpl;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
+@Slf4j
 public class MysqlSinkTask extends JdbcSinkTask {
     String user;
     String password;
@@ -18,9 +21,9 @@ public class MysqlSinkTask extends JdbcSinkTask {
     String host;
     String database;
     String table;
-    Connection conn;
     List<String> primaryKeys;
 
+    @SneakyThrows
     @Override
     public void init(HRecord cfg) {
         this.user = cfg.getString("user");
@@ -29,12 +32,13 @@ public class MysqlSinkTask extends JdbcSinkTask {
         this.port = cfg.getInt("port");
         this.database = cfg.getString("database");
         this.table = cfg.getString("table");
-        this.conn = getConn();
-        this.primaryKeys = Utils.getPrimaryKey(conn, table);
+        try (var newConn = getNewConn()) {
+            this.primaryKeys = Utils.getPrimaryKey(newConn, table);
+        }
     }
 
     @Override
-    public Connection getConn() {
+    public Connection getNewConn() {
         Properties connectionProps = new Properties();
         connectionProps.put("user", user);
         connectionProps.put("password", password);
@@ -43,7 +47,7 @@ public class MysqlSinkTask extends JdbcSinkTask {
             var conn = DriverManager.getConnection(
                     "jdbc:mysql://" + host + ":" + port + "/" + database,
                     connectionProps);
-            System.out.println("Connected to database");
+            log.info("Connected to database");
             return conn;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -51,44 +55,23 @@ public class MysqlSinkTask extends JdbcSinkTask {
     }
 
     @Override
-    public PreparedStatement getUpsertStmt(List<String> fields, List<String> keys) {
-        var stmt = String.format(
+    public String getUpsertSql(List<String> fields, List<String> keys) {
+        return String.format(
                 "INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
                 table,
                 Utils.makeFields(fields),
                 Utils.makeValues(fields.size()),
                 Utils.makeUpsertUpdate(fields));
-        System.out.println("upsert statement:" + stmt);
-        try {
-            return conn.prepareStatement(stmt);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
-    public PreparedStatement getDeleteStmt(List<String> keys) {
-        var stmt = String.format("delete from %s where %s", table, Utils.makeWhere(keys));
-        System.out.println("delete stmt:" + stmt);
-        try {
-            return conn.prepareStatement(stmt);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public String getDeleteSql(List<String> keys) {
+        return String.format("delete from %s where %s", table, Utils.makeWhere(keys));
     }
 
     @Override
     List<String> getPrimaryKeys() {
         return primaryKeys;
-    }
-
-    @Override
-    public void stop() {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
