@@ -37,7 +37,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         return ReportMessage.builder()
                 .deliveredRecords(deliveredRecords.getAndSet(0))
                 .deliveredBytes(deliveredBytes.getAndSet(0))
-                .offsets(List.of(mapper.createObjectNode().put("sub", subId)))
+                .offsets(List.of())
                 .build();
     }
 
