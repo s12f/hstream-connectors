@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sink-las",
+  "description": "the configuration specification of sink-las",
+  "type": "object",
+  "properties": {
+    "stream": {
+      "description": "source HStream stream name",
+      "type": "string"
+    },
+    "accessId": {
+      "description": "access id",
+      "type": "string"
+    },
+    "accessKey": {
+      "description": "access key",
+      "type": "string"
+    },
+    "endpoint": {
+      "description": "endpoint",
+      "type": "string",
+      "default": "las-tunnel-cn-beijing.volces.com:80"
+    },
+    "region": {
+      "description": "region",
+      "type": "string",
+      "default": "cn-beijing"
+    },
+    "database": {
+      "description": "database",
+      "type": "string"
+    },
+    "table": {
+      "description": "table",
+      "type": "string"
+    },
+    "mode": {
+      "description": "write mode",
+      "type": "string",
+      "enum": ["UPSERT", "INSERT", "OVERWRITE_INSERT"],
+      "default": "UPSERT"
+    }
+  },
+  "required": ["stream", "accessId", "accessKey", "endpoint", "region", "database", "table", "mode"],
+  "ui:order": ["stream", "accessId", "accessKey", "endpoint", "region", "database", "table", "mode"]
+}

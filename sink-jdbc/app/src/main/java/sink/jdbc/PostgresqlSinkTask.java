@@ -2,12 +2,12 @@ package sink.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
-import io.hstream.io.SinkTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.impl.SinkTaskContextImpl;
+import lombok.SneakyThrows;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -20,9 +20,9 @@ public class PostgresqlSinkTask extends JdbcSinkTask {
     String password;
     String database;
     String table;
-    Connection conn;
     List<String> primaryKeys;
 
+    @SneakyThrows
     @Override
     public void init(HRecord cfg) {
         this.host = cfg.getString("host");
@@ -31,12 +31,13 @@ public class PostgresqlSinkTask extends JdbcSinkTask {
         this.password = cfg.getString("password");
         this.database = cfg.getString("database");
         this.table = cfg.getString("table");
-        this.conn = getConn();
-        primaryKeys = Utils.getPrimaryKey(conn, table);
+        try (var newConn = getNewConn()) {
+            primaryKeys = Utils.getPrimaryKey(newConn, table);
+        }
     }
 
     @Override
-    public Connection getConn() {
+    public Connection getNewConn() {
         Properties connectionProps = new Properties();
         connectionProps.put("user", user);
         connectionProps.put("password", password);
@@ -53,8 +54,8 @@ public class PostgresqlSinkTask extends JdbcSinkTask {
     }
 
     @Override
-    public PreparedStatement getUpsertStmt(List<String> fields, List<String> keys) {
-        var stmt = String.format(
+    public String getUpsertSql(List<String> fields, List<String> keys) {
+        return String.format(
                 "INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) DO UPDATE SET %s",
                 table,
                 Utils.makeFields(fields),
@@ -62,37 +63,16 @@ public class PostgresqlSinkTask extends JdbcSinkTask {
                 Utils.makeFields(keys),
                 makeUpsertUpdate(fields)
         );
-        System.out.println("upsert statement:" + stmt);
-        try {
-            return conn.prepareStatement(stmt);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
-    public PreparedStatement getDeleteStmt(List<String> keys) {
-        var stmt = String.format("delete from %s where %s", table, Utils.makeWhere(keys));
-        System.out.println("delete stmt:" + stmt);
-        try {
-            return conn.prepareStatement(stmt);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public String getDeleteSql(List<String> keys) {
+        return String.format("delete from %s where %s", table, Utils.makeWhere(keys));
     }
 
     @Override
     List<String> getPrimaryKeys() {
         return primaryKeys;
-    }
-
-    @Override
-    public void stop() {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     String makeUpsertUpdate(List<String> fields) {

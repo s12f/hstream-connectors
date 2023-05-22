@@ -160,15 +160,9 @@ public class HStreamService {
   }
 
   private static Integer getRandomOpenPort() throws IOException {
-    ServerSocket socket = null;
-    try {
-      socket = new ServerSocket(0);
+    try (ServerSocket socket = new ServerSocket(0)) {
       socket.setReuseAddress(true);
       return socket.getLocalPort();
-    } finally {
-      if (socket != null) {
-        socket.close();
-      }
     }
   }
 }

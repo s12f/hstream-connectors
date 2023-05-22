@@ -1,20 +1,18 @@
 package io.hstream.io.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.hstream.Consumer;
-import io.hstream.HRecord;
-import io.hstream.HStreamClient;
-import io.hstream.Subscription;
+import io.hstream.*;
 import io.hstream.io.KvStore;
 import io.hstream.io.ReportMessage;
 import io.hstream.io.SinkRecord;
 import io.hstream.io.SinkTaskContext;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,6 +25,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     String subId;
     AtomicInteger deliveredRecords = new AtomicInteger(0);
     AtomicInteger deliveredBytes = new AtomicInteger(0);
+    CountDownLatch latch = new CountDownLatch(1);
 
     @Override
     public KvStore getKvStore() {
@@ -38,20 +37,8 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         return ReportMessage.builder()
                 .deliveredRecords(deliveredRecords.getAndSet(0))
                 .deliveredBytes(deliveredBytes.getAndSet(0))
-                .offsets(getSubscriptionOffsets())
+                .offsets(List.of())
                 .build();
-    }
-
-    List<JsonNode> getSubscriptionOffsets() {
-        if (subId == null) {
-            return List.of();
-        }
-        return client.getSubscription(subId).getOffsets()
-                .stream()
-                .map(offset -> mapper.createObjectNode()
-                        .put("shardId", offset.getShardId())
-                        .put("batchId", offset.getBatchId()))
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -64,6 +51,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         return new SinkRecord(record);
     }
 
+    @SneakyThrows
     @Override
     public void handle(BiConsumer<String, List<SinkRecord>> handler) {
         var hsCfg = cfg.getHRecord("hstream");
@@ -82,28 +70,65 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             client.createSubscription(sub);
             kv.set("hstream_subscription_id", subId).join();
         }
+        latch = new CountDownLatch(1);
         this.consumer = client.newConsumer()
                 .subscription(subId)
-                .rawRecordReceiver(((receivedRawRecord, responder) -> {
-                    log.debug("received raw record:{}", receivedRawRecord.getRecordId());
-                    var hRecord = tryConvertToHRecord(receivedRawRecord.getRawRecord());
-                    if (hRecord != null) {
-                        handler.accept(stream, List.of(makeSinkRecord(hRecord)));
-                        responder.ack();
-                    }
-                    deliveredRecords.incrementAndGet();
-                    deliveredBytes.addAndGet(receivedRawRecord.getRawRecord().length);
-                }))
-                .hRecordReceiver((receivedHRecord, responder) -> {
-                    log.debug("received:{}", receivedHRecord.getHRecord().toJsonString());
-                    handler.accept(stream, List.of(makeSinkRecord(receivedHRecord.getHRecord())));
-                    responder.ack();
-                    deliveredRecords.incrementAndGet();
-                    deliveredBytes.addAndGet(receivedHRecord.getHRecord().getDelegate().getSerializedSize());
+                .batchReceiver((records, batchAckResponder) -> {
+                    var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                    handleWithRetry(handler, stream, sinkRecords, batchAckResponder);
                 })
                 .build();
         consumer.startAsync().awaitRunning();
-        consumer.awaitTerminated();
+        latch.await();
+        log.info("connector failed");
+        consumer.stopAsync().awaitTerminated();
+    }
+
+    @SneakyThrows
+    void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, List<SinkRecord> sinkRecords, BatchAckResponder responder) {
+        int count = 0;
+        int maxRetries = 3;
+        int retryInterval = 5;
+        while (count < maxRetries) {
+            try {
+                handler.accept(stream, sinkRecords);
+                responder.ackAll();
+                updateMetrics(sinkRecords);
+                return;
+            } catch (Throwable e) {
+                log.warn("deliver record failed:{}", e.getMessage());
+                e.printStackTrace();
+                count++;
+                Thread.sleep(retryInterval * count * 1000L);
+            }
+        }
+        // failed
+        latch.countDown();
+    }
+
+    void updateMetrics(List<SinkRecord> records) {
+        var bytesSize = 0;
+        for (var r : records) {
+            bytesSize += r.getRecord().getDelegate().getSerializedSize();
+        }
+        deliveredBytes.addAndGet(bytesSize);
+        deliveredRecords.addAndGet(records.size());
+    }
+
+    SinkRecord makeSinkRecord(ReceivedRecord receivedRecord) {
+        var record = receivedRecord.getRecord();
+        if (record.isRawRecord()) {
+            var hRecord = tryConvertToHRecord(record.getRawRecord());
+            if (hRecord != null) {
+                return new SinkRecord(hRecord);
+            } else {
+                log.info("invalid record, stopping task");
+                latch.countDown();
+                throw new RuntimeException("invalid record");
+            }
+        } else {
+            return new SinkRecord(record.getHRecord());
+        }
     }
 
     HRecord tryConvertToHRecord(byte[] rawRecord) {

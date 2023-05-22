@@ -17,7 +17,9 @@ import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -106,7 +108,6 @@ public class TaskRunner {
                 executor.scheduleAtFixedRate(this::report, 3, 3, TimeUnit.SECONDS);
                 var connectorConfig = cfg.getHRecord("connector");
                 try {
-                    parseConfig(runCmd.configPath);
                     ctx.init(cfg, kv);
                     if (task instanceof SourceTask) {
                         var st = (SourceTask) task;
@@ -180,22 +181,24 @@ public class TaskRunner {
     }
 
     public void stop() {
-        log.info("stopping runner");
-        if (task instanceof SourceTask) {
-            task.stop();
-            log.info("stopped source task");
-            ctx.close();
-            log.info("stopped source context");
-        } else {
-            ctx.close();
-            log.info("stopped sink context");
-            task.stop();
-            log.info("stopped sink task");
-        }
-        log.info("stopped runner");
         try {
+            log.info("stopping runner");
+            if (task instanceof SourceTask) {
+                task.stop();
+                log.info("stopped source task");
+                ctx.close();
+                log.info("stopped source context");
+            } else {
+                ctx.close();
+                log.info("stopped sink context");
+                task.stop();
+                log.info("stopped sink task");
+            }
+            log.info("stopped runner");
             kv.close();
             channel.close();
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+            System.exit(1);
+        }
     }
 }
