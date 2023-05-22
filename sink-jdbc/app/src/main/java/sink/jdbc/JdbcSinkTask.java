@@ -110,7 +110,7 @@ abstract public class JdbcSinkTask implements SinkTask {
 
     void upsert(List<SinkRecord> records) throws SQLException {
         var fields = getFields(records.get(0));
-        var keys = getHRecordKeys(records.get(0).record);
+        var keys = getHRecordKeys(records.get(0).record.getHRecord("key"));
         PreparedStatement stmt = getUpsertStmt(fields, keys);
         for(var record : records) {
             var m = record.record.getHRecord("value").getDelegate().getFieldsMap();

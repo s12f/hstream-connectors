@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -72,17 +73,9 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         latch = new CountDownLatch(1);
         this.consumer = client.newConsumer()
                 .subscription(subId)
-                .rawRecordReceiver(((receivedRawRecord, responder) -> {
-                    var hRecord = tryConvertToHRecord(receivedRawRecord.getRawRecord());
-                    if (hRecord != null) {
-                        handleWithRetry(handler, stream, makeSinkRecord(hRecord), responder);
-                    } else {
-                        log.info("invalid record, stopping task");
-                        latch.countDown();
-                    }
-                }))
-                .hRecordReceiver((receivedHRecord, responder) -> {
-                    handleWithRetry(handler, stream, makeSinkRecord(receivedHRecord.getHRecord()), responder);
+                .batchReceiver((records, batchAckResponder) -> {
+                    var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                    handleWithRetry(handler, stream, sinkRecords, batchAckResponder);
                 })
                 .build();
         consumer.startAsync().awaitRunning();
@@ -92,16 +85,15 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     }
 
     @SneakyThrows
-    void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, SinkRecord sinkRecord, Responder responder) {
+    void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, List<SinkRecord> sinkRecords, BatchAckResponder responder) {
         int count = 0;
         int maxRetries = 3;
         int retryInterval = 5;
         while (count < maxRetries) {
             try {
-                handler.accept(stream, List.of(sinkRecord));
-                responder.ack();
-                deliveredRecords.incrementAndGet();
-                deliveredBytes.addAndGet(sinkRecord.record.getDelegate().getSerializedSize());
+                handler.accept(stream, sinkRecords);
+                responder.ackAll();
+                updateMetrics(sinkRecords);
                 return;
             } catch (Throwable e) {
                 log.warn("deliver record failed:{}", e.getMessage());
@@ -112,6 +104,31 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         }
         // failed
         latch.countDown();
+    }
+
+    void updateMetrics(List<SinkRecord> records) {
+        var bytesSize = 0;
+        for (var r : records) {
+            bytesSize += r.getRecord().getDelegate().getSerializedSize();
+        }
+        deliveredBytes.addAndGet(bytesSize);
+        deliveredRecords.addAndGet(records.size());
+    }
+
+    SinkRecord makeSinkRecord(ReceivedRecord receivedRecord) {
+        var record = receivedRecord.getRecord();
+        if (record.isRawRecord()) {
+            var hRecord = tryConvertToHRecord(record.getRawRecord());
+            if (hRecord != null) {
+                return new SinkRecord(hRecord);
+            } else {
+                log.info("invalid record, stopping task");
+                latch.countDown();
+                throw new RuntimeException("invalid record");
+            }
+        } else {
+            return new SinkRecord(record.getHRecord());
+        }
     }
 
     HRecord tryConvertToHRecord(byte[] rawRecord) {
