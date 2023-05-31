@@ -50,6 +50,9 @@ dependencies {
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    // BSON
+    implementation 'org.mongodb:bson:4.9.1'
 }
 
 publishing {

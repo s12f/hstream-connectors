@@ -35,6 +35,11 @@ public class SinkMysqlTest {
   }
 
   @Test
+  void testBsonRecord() throws Exception {
+    Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.BSON);
+  }
+
+  @Test
   void testSpec() throws Exception {
     var spec = helper.client.getConnectorSpec("SINK", "mysql");
     log.info("spec:{}", spec);

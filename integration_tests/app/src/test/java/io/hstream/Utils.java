@@ -1,5 +1,6 @@
 package io.hstream;
 
+import com.github.dockerjava.api.model.Link;
 import io.hstream.external.Jdbc;
 import io.hstream.external.Sink;
 import io.hstream.external.Source;
@@ -156,6 +157,24 @@ public class Utils {
     return arrBuilder.build();
   }
 
+  static List<Record> randomDataSetWithBson(int num) {
+    assert num > 0;
+    var res = new LinkedList<Record>();
+    var rand = new Random();
+    for (int i = 0; i < num; i++) {
+      res.add(Record.newBuilder().hRecord(HRecord.newBuilder()
+                      .put("k1", HRecord.newBuilder()
+                              .put("$numberLong", String.valueOf(i))
+                              .build())
+                      .put("v1", HRecord.newBuilder()
+                              .put("$numberLong", String.valueOf(rand.nextInt(100)))
+                              .build())
+                      .put("v2", UUID.randomUUID().toString())
+                      .build()).build());
+    }
+    return res;
+  }
+
   static void createTableForRandomDataSet(Jdbc jdbc, String tableName) {
     jdbc.execute(
         String.format("create table %s (k1 int primary key, v1 int, v2 varchar(255))", tableName));
@@ -222,7 +241,8 @@ public class Utils {
   public enum IORecordType {
     RAW_JSON,
     PLAIN,
-    KEY_VALUE
+    KEY_VALUE,
+    BSON
   }
 
   @SneakyThrows
@@ -242,6 +262,8 @@ public class Utils {
       case KEY_VALUE:
         ds = Utils.randomDataSet(count);
         break;
+      case BSON:
+        ds = Utils.randomDataSetWithBson(count);
     }
     helper.writeStream(streamName, ds);
     if (sink instanceof Jdbc) {

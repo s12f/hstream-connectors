@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
@@ -45,10 +46,6 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     public void init(HRecord config, KvStore kv) {
         this.cfg = config;
         this.kv = kv;
-    }
-
-    private SinkRecord makeSinkRecord(HRecord record) {
-        return new SinkRecord(record);
     }
 
     @SneakyThrows
@@ -120,14 +117,14 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         if (record.isRawRecord()) {
             var hRecord = tryConvertToHRecord(record.getRawRecord());
             if (hRecord != null) {
-                return new SinkRecord(hRecord);
+                return new SinkRecord(tryFormatHRecord(hRecord));
             } else {
                 log.info("invalid record, stopping task");
                 latch.countDown();
                 throw new RuntimeException("invalid record");
             }
         } else {
-            return new SinkRecord(record.getHRecord());
+            return new SinkRecord(tryFormatHRecord(record.getHRecord()));
         }
     }
 
@@ -136,6 +133,16 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             return HRecord.newBuilder().merge(new String(rawRecord)).build();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    HRecord tryFormatHRecord(HRecord hRecord) {
+        var jsonStr = hRecord.toCompactJsonString();
+        try {
+            var doc = Document.parse(jsonStr);
+            return HRecord.newBuilder().merge(doc.toJson()).build();
+        } catch (Exception e) {
+            return hRecord;
         }
     }
 
