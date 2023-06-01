@@ -1,11 +1,12 @@
 package io.hstream.io.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.Service;
 import io.hstream.*;
-import io.hstream.io.KvStore;
-import io.hstream.io.ReportMessage;
-import io.hstream.io.SinkRecord;
-import io.hstream.io.SinkTaskContext;
+import io.hstream.io.*;
+
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,12 +22,12 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     static ObjectMapper mapper = new ObjectMapper();
     HRecord cfg;
     HStreamClient client;
-    Consumer consumer;
     KvStore kv;
-    String subId;
     AtomicInteger deliveredRecords = new AtomicInteger(0);
     AtomicInteger deliveredBytes = new AtomicInteger(0);
     CountDownLatch latch = new CountDownLatch(1);
+    List<StreamShardReader> readers = new LinkedList<>();
+    SinkOffsetsManager sinkOffsetsManager;
 
     @Override
     public KvStore getKvStore() {
@@ -35,10 +36,15 @@ public class SinkTaskContextImpl implements SinkTaskContext {
 
     @Override
     public ReportMessage getReportMessage() {
+        var offsets = sinkOffsetsManager.getStoredOffsets().entrySet().stream()
+                .map(entry -> (JsonNode) mapper.createObjectNode()
+                        .put("shardId", entry.getKey())
+                        .put("offset", entry.getValue()))
+                .collect(Collectors.toList());
         return ReportMessage.builder()
                 .deliveredRecords(deliveredRecords.getAndSet(0))
                 .deliveredBytes(deliveredBytes.getAndSet(0))
-                .offsets(List.of())
+                .offsets(offsets)
                 .build();
     }
 
@@ -56,41 +62,39 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         var taskId = cfg.getString("task");
         var cCfg = cfg.getHRecord("connector");
         var stream = cCfg.getString("stream");
-        subId = kv.get("hstream_subscription_id").join();
-        if (subId == null) {
-            subId = "connector_sub_" + taskId;
-            var sub = Subscription.newBuilder().
-                    stream(stream)
-                    .subscription(subId)
-                    .offset(Subscription.SubscriptionOffset.EARLIEST)
-                    .build();
-            client.createSubscription(sub);
-            kv.set("hstream_subscription_id", subId).join();
+        var shards = client.listShards(stream);
+        if (shards.size() > 1) {
+            log.warn("source stream shards > 1");
         }
+        sinkOffsetsManager = new SinkOffsetsManagerImpl(kv, taskId);
         latch = new CountDownLatch(1);
-        this.consumer = client.newConsumer()
-                .subscription(subId)
-                .batchReceiver((records, batchAckResponder) -> {
-                    var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
-                    handleWithRetry(handler, stream, sinkRecords, batchAckResponder);
-                })
-                .build();
-        consumer.startAsync().awaitRunning();
+        for (var shard : shards) {
+            var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())
+                    .shardOffset(new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST))
+                    .batchReceiver(records -> {
+                        var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                        synchronized (handler) {
+                            handleWithRetry(handler, stream, sinkRecords);
+                            sinkOffsetsManager.update(shard.getShardId(), records.get(records.size() - 1).getRecordId());
+                            updateMetrics(sinkRecords);
+                        }
+                    }).build();
+            reader.startAsync().awaitRunning();
+            readers.add(reader);
+        }
         latch.await();
-        log.info("connector failed");
-        consumer.stopAsync().awaitTerminated();
+        log.info("closing connector");
+        close();
     }
 
     @SneakyThrows
-    void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, List<SinkRecord> sinkRecords, BatchAckResponder responder) {
+    void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, List<SinkRecord> sinkRecords) {
         int count = 0;
         int maxRetries = 3;
         int retryInterval = 5;
         while (count < maxRetries) {
             try {
                 handler.accept(stream, sinkRecords);
-                responder.ackAll();
-                updateMetrics(sinkRecords);
                 return;
             } catch (Throwable e) {
                 log.warn("deliver record failed:{}", e.getMessage());
@@ -101,6 +105,8 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         }
         // failed
         latch.countDown();
+        log.info("connector failed");
+        throw new RuntimeException("connector failed, retried:" + maxRetries);
     }
 
     void updateMetrics(List<SinkRecord> records) {
@@ -146,13 +152,12 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         }
     }
 
+    @SneakyThrows
     @Override
     public void close() {
-        try {
-            consumer.stopAsync().awaitTerminated();
-            client.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        latch.countDown();
+        readers.forEach(Service::stopAsync);
+        sinkOffsetsManager.close();
+        client.close();
     }
 }

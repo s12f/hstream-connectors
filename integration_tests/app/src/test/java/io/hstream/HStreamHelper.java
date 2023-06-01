@@ -37,9 +37,9 @@ public class HStreamHelper {
     throw new RuntimeException("get client timeout");
   }
 
-  void writeStream(String stream, List<Record> records) {
+  void writeStream(String stream, List<Record> records, int shardCount) {
     if (client.listStreams().stream().noneMatch(s -> s.getStreamName().equals(stream))) {
-      client.createStream(stream);
+      client.createStream(Stream.newBuilder().streamName(stream).shardCount(shardCount).build());
     }
     try (var producer = client.newBufferedProducer().stream(stream).build()) {
       for (var record : records) {

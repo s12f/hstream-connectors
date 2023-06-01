@@ -66,7 +66,9 @@ public class Postgresql extends Jdbc {
 
   @Override
   public String getCreateConnectorConfig(String stream, String target) {
-    var cfg = Utils.mapper.createObjectNode()
+    var cfg =
+        Utils.mapper
+            .createObjectNode()
             .put("user", user)
             .put("password", password)
             .put("host", Utils.getHostname())

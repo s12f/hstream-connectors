@@ -1,6 +1,5 @@
 package io.hstream;
 
-import com.github.dockerjava.api.model.Link;
 import io.hstream.external.Jdbc;
 import io.hstream.external.Sink;
 import io.hstream.external.Source;
@@ -20,7 +19,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +28,7 @@ import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 public class Utils {
-  static public ObjectMapper mapper = new ObjectMapper();
+  public static ObjectMapper mapper = new ObjectMapper();
   static String mysqlRootPassword = "password";
   static String postgresPassword = "postgres";
 
@@ -101,11 +99,15 @@ public class Utils {
   }
 
   static List<Record> randomDataSet(int num) {
+    return randomDataSet(num, false);
+  }
+
+  static List<Record> randomDataSet(int num, boolean multiKeys) {
     assert num > 0;
     var lst = new LinkedList<Record>();
     var rand = new Random();
     for (int i = 0; i < num; i++) {
-      lst.add(
+      var rb =
           Record.newBuilder()
               .hRecord(
                   HRecord.newBuilder()
@@ -117,8 +119,11 @@ public class Utils {
                               .put("v1", rand.nextInt(100))
                               .put("v2", UUID.randomUUID().toString())
                               .build())
-                      .build())
-              .build());
+                      .build());
+      if (multiKeys) {
+        rb.partitionKey(String.valueOf(i));
+      }
+      lst.add(rb.build());
     }
     return lst;
   }
@@ -162,15 +167,19 @@ public class Utils {
     var res = new LinkedList<Record>();
     var rand = new Random();
     for (int i = 0; i < num; i++) {
-      res.add(Record.newBuilder().hRecord(HRecord.newBuilder()
-                      .put("k1", HRecord.newBuilder()
-                              .put("$numberLong", String.valueOf(i))
-                              .build())
-                      .put("v1", HRecord.newBuilder()
+      res.add(
+          Record.newBuilder()
+              .hRecord(
+                  HRecord.newBuilder()
+                      .put("k1", HRecord.newBuilder().put("$numberLong", String.valueOf(i)).build())
+                      .put(
+                          "v1",
+                          HRecord.newBuilder()
                               .put("$numberLong", String.valueOf(rand.nextInt(100)))
                               .build())
                       .put("v2", UUID.randomUUID().toString())
-                      .build()).build());
+                      .build())
+              .build());
     }
     return res;
   }
@@ -219,12 +228,13 @@ public class Utils {
     // create connector
     var connectorName = "ss1";
     var stream = "stream01";
-    helper.client.createConnector(CreateConnectorRequest.newBuilder()
-                    .name(connectorName)
-                    .type(ConnectorType.valueOf("SOURCE"))
-                    .target(source.getName())
-                    .config(source.getCreateConnectorConfig(stream, table))
-                    .build());
+    helper.client.createConnector(
+        CreateConnectorRequest.newBuilder()
+            .name(connectorName)
+            .type(ConnectorType.valueOf("SOURCE"))
+            .target(source.getName())
+            .config(source.getCreateConnectorConfig(stream, table))
+            .build());
     var result = helper.client.listConnectors();
     Assertions.assertEquals(result.size(), 1);
     // check the stream
@@ -247,6 +257,21 @@ public class Utils {
 
   @SneakyThrows
   public static void testSinkFullSync(HStreamHelper helper, Sink sink, IORecordType recordType) {
+    testSinkFullSync(helper, sink, recordType, false);
+  }
+
+  public static Connector testSinkFullSync(
+      HStreamHelper helper, Sink sink, IORecordType recordType, boolean deleteConnector) {
+    return testSinkFullSync(helper, sink, recordType, false, 1);
+  }
+
+  @SneakyThrows
+  public static Connector testSinkFullSync(
+      HStreamHelper helper,
+      Sink sink,
+      IORecordType recordType,
+      boolean deleteConnector,
+      int shardCount) {
     var streamName = "stream01";
     var connectorName = "sk1";
     var table = "t1";
@@ -260,21 +285,23 @@ public class Utils {
         ds = Utils.randomPlainDataSet(count);
         break;
       case KEY_VALUE:
-        ds = Utils.randomDataSet(count);
+        ds = Utils.randomDataSet(count, shardCount > 1);
         break;
       case BSON:
         ds = Utils.randomDataSetWithBson(count);
     }
-    helper.writeStream(streamName, ds);
+    helper.writeStream(streamName, ds, shardCount);
     if (sink instanceof Jdbc) {
       Utils.createTableForRandomDataSet((Jdbc) sink, table);
     }
-    helper.client.createConnector(CreateConnectorRequest.newBuilder()
-                    .name(connectorName)
-                    .type(ConnectorType.valueOf("SINK"))
-                    .target(sink.getName())
-                    .config(sink.getCreateConnectorConfig(streamName, table))
-            .build());
+    var connector =
+        helper.client.createConnector(
+            CreateConnectorRequest.newBuilder()
+                .name(connectorName)
+                .type(ConnectorType.valueOf("SINK"))
+                .target(sink.getName())
+                .config(sink.getCreateConnectorConfig(streamName, table))
+                .build());
     Utils.runUntil(10, 3, () -> sink.readDataSet(table).size() >= count);
     // wait and re-check
     try {
@@ -286,7 +313,9 @@ public class Utils {
     Assertions.assertEquals(count, dataSet.size());
     // Thread.sleep(10000);
     // log.info("getConnector offsets:{}", helper.client.getConnector(connectorName).offsets);
-    log.info("connector logs:{}", helper.client.getConnectorLogs(connectorName, 5, 10));
-    helper.client.deleteConnector(connectorName);
+    if (deleteConnector) {
+      helper.client.deleteConnector(connectorName);
+    }
+    return connector;
   }
 }

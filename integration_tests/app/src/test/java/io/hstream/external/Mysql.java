@@ -1,6 +1,5 @@
 package io.hstream.external;
 
-import io.hstream.Options;
 import io.hstream.Utils;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -70,7 +69,9 @@ public class Mysql extends Jdbc {
 
   @Override
   public String getCreateConnectorConfig(String stream, String target) {
-    var cfg = Utils.mapper.createObjectNode()
+    var cfg =
+        Utils.mapper
+            .createObjectNode()
             .put("user", "root")
             .put("password", "password")
             .put("host", Utils.getHostname())
