@@ -52,6 +52,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     public void init(HRecord config, KvStore kv) {
         this.cfg = config;
         this.kv = kv;
+        sinkOffsetsManager = new SinkOffsetsManagerImpl(kv, "SinkOffsetsManagerImpl");
     }
 
     @SneakyThrows
@@ -66,7 +67,6 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         if (shards.size() > 1) {
             log.warn("source stream shards > 1");
         }
-        sinkOffsetsManager = new SinkOffsetsManagerImpl(kv, taskId);
         latch = new CountDownLatch(1);
         for (var shard : shards) {
             var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())

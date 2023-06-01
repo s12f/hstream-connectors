@@ -27,6 +27,7 @@ public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     SinkOffsetsManagerImpl(KvStore kvStore, String prefix) {
         this.kvStore = kvStore;
         this.offsetsKey = prefix + "_offsets";
+        init();
         executor.scheduleAtFixedRate(this::storeOffsets, 1, 1, TimeUnit.SECONDS);
     }
 
