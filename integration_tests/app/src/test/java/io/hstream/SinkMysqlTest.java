@@ -2,10 +2,7 @@ package io.hstream;
 
 import io.hstream.external.Mysql;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.*;
 
 @Slf4j
 public class SinkMysqlTest {
@@ -37,6 +34,24 @@ public class SinkMysqlTest {
   @Test
   void testBsonRecord() throws Exception {
     Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.BSON);
+  }
+
+  @Test
+  void testOffsets() throws Exception {
+    var connector = Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.KEY_VALUE, false);
+    Thread.sleep(5000);
+    var offsets = helper.client.getConnector(connector.getName()).getOffsets();
+    log.info("offsets:{}", offsets);
+    Assertions.assertFalse(offsets.isEmpty());
+  }
+
+  @Test
+  void testMultiShards() throws Exception {
+    var connector = Utils.testSinkFullSync(helper, mysql, Utils.IORecordType.KEY_VALUE, false, 3);
+    Thread.sleep(5000);
+    var offsets = helper.client.getConnector(connector.getName()).getOffsets();
+    log.info("offsets:{}", offsets);
+    Assertions.assertFalse(offsets.isEmpty());
   }
 
   @Test

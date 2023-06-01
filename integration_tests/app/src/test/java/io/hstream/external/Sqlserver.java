@@ -1,6 +1,5 @@
 package io.hstream.external;
 
-import io.hstream.Options;
 import io.hstream.Utils;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -62,18 +61,21 @@ public class Sqlserver extends Jdbc {
         String.format(
             "EXEC sys.sp_cdc_enable_table @source_schema = 'dbo', @source_name = '%s', @role_name = NULL, @supports_net_changes = 0;",
             table);
-    Utils.runUntil(3, 1, () -> {
-      try {
-        execute(sql);
-        return true;
-      } catch (Exception e) {
-        log.info("enable CDC for table failed:{}", e.getMessage());
-        e.printStackTrace();
-        return false;
-      }
-  });
-  ;
-}
+    Utils.runUntil(
+        3,
+        1,
+        () -> {
+          try {
+            execute(sql);
+            return true;
+          } catch (Exception e) {
+            log.info("enable CDC for table failed:{}", e.getMessage());
+            e.printStackTrace();
+            return false;
+          }
+        });
+    ;
+  }
 
   @Override
   Connection getConn() {
@@ -104,7 +106,9 @@ public class Sqlserver extends Jdbc {
 
   @Override
   public String getCreateConnectorConfig(String stream, String target) {
-    var cfg = Utils.mapper.createObjectNode()
+    var cfg =
+        Utils.mapper
+            .createObjectNode()
             .put("user", user)
             .put("password", password)
             .put("host", Utils.getHostname())

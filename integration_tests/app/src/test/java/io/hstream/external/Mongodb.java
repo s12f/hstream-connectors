@@ -6,7 +6,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import io.hstream.HArray;
 import io.hstream.HRecord;
-import io.hstream.Options;
 import io.hstream.Utils;
 import java.util.LinkedList;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +44,9 @@ public class Mongodb implements Source, Sink {
   @Override
   public String getCreateConnectorConfig(String stream, String target) {
     var hostname = Utils.getHostname();
-    var cfg = Utils.mapper.createObjectNode()
+    var cfg =
+        Utils.mapper
+            .createObjectNode()
             .put("hosts", hostname + ":" + service.getFirstMappedPort())
             .put("stream", stream)
             .put("database", dbStr)
