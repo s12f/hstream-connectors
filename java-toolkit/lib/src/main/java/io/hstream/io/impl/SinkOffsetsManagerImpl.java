@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     KvStore kvStore;
-    String prefix;
     String offsetsKey;
     ConcurrentHashMap<Long, String> offsets = new ConcurrentHashMap<>();
     AtomicReference<HashMap<Long, String>> storedOffsets = new AtomicReference<>(new HashMap<>());
@@ -49,7 +48,7 @@ public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     @SneakyThrows
     void storeOffsets() {
         var stored = new HashMap<>(offsets);
-        kvStore.set(prefix + "_offsets", mapper.writeValueAsString(stored));
+        kvStore.set(offsetsKey, mapper.writeValueAsString(stored));
         storedOffsets.set(stored);
     }
 
