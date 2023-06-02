@@ -48,7 +48,7 @@ public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     @SneakyThrows
     void storeOffsets() {
         var stored = new HashMap<>(offsets);
-        kvStore.set(offsetsKey + "_offsets", mapper.writeValueAsString(stored));
+        kvStore.set(offsetsKey, mapper.writeValueAsString(stored));
         storedOffsets.set(stored);
     }
 

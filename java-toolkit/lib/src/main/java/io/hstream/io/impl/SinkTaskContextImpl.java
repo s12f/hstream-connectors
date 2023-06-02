@@ -68,9 +68,14 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             log.warn("source stream shards > 1");
         }
         latch = new CountDownLatch(1);
+        var offsets = sinkOffsetsManager.getStoredOffsets();
         for (var shard : shards) {
+            var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
+            if (offsets.containsKey(shard.getShardId())) {
+                offset = new StreamShardOffset(offsets.get(shard.getShardId()));
+            }
             var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())
-                    .shardOffset(new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST))
+                    .shardOffset(offset)
                     .batchReceiver(records -> {
                         var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
                         synchronized (handler) {
