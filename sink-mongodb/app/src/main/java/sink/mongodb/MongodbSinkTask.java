@@ -13,6 +13,8 @@ import io.hstream.io.SinkTaskContext;
 import io.hstream.io.TaskRunner;
 import io.hstream.io.Utils;
 import io.hstream.io.impl.SinkTaskContextImpl;
+
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -54,9 +56,9 @@ public class MongodbSinkTask implements SinkTask {
     }
 
     private UpdateOneModel<Document> mapRecord(SinkRecord sinkRecord) {
-        var record = sinkRecord.record;
-        var keyDoc = Document.parse(record.getHRecord("key").toCompactJsonString());
-        var valDoc = Document.parse(record.getHRecord("value").toCompactJsonString());
+        var doc = Document.parse(new String(sinkRecord.record, StandardCharsets.UTF_8));
+        var keyDoc = doc.get("key", Document.class);
+        var valDoc = doc.get("value");
         log.debug("keyDoc:{}, valDoc:{}", keyDoc, valDoc);
         return new UpdateOneModel<>(keyDoc,
                 new Document("$set", valDoc),

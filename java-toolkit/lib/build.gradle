@@ -10,7 +10,13 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'java'
 }
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -57,9 +63,10 @@ dependencies {
 
 publishing {
     publications {
-        mavenJava(MavenPublication){
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
             artifactId = "java-toolkit"
-            from(components["java"])
+//            from(components["java"])
             versionMapping {
                 usage("java-api") {
                     fromResolutionOf("runtimeClasspath")
@@ -126,4 +133,10 @@ publishing {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+tasks {
+    shadowJar {
+        archiveClassifier.set("")
+    }
 }

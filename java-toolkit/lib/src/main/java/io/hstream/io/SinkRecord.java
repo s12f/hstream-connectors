@@ -1,13 +1,12 @@
 package io.hstream.io;
 
-import io.hstream.HRecord;
-import lombok.Data;
+import lombok.Builder;
 
-@Data
+@Builder
 public class SinkRecord {
-    public HRecord record;
+    public byte[] record;
 
-    public SinkRecord(HRecord record) {
+    public SinkRecord(byte[] record) {
         this.record = record;
     }
 }

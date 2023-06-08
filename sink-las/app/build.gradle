@@ -15,17 +15,11 @@ repositories {
     mavenLocal()
     // Use Maven Central for resolving dependencies.
     mavenCentral()
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
     maven { url 'https://artifact.bytedance.com/repository/releases/' }
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
-
-    // This dependency is used by the application.
-    implementation 'com.google.guava:guava:31.0.1-jre'
-
     // slf4j
     compileOnly 'org.slf4j:slf4j-api:1.7.30'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.0'
@@ -52,12 +46,11 @@ task buildImages(type: Exec) {
     commandLine "docker", "build", "..", "-f", "../docker/Dockerfile", "-t", "hstreamdb/sink-las:${imageVersion}"
 }
 
-application {
-    // Define the main class for the application.
-    mainClass = 'sink.LasSinkTask'
-}
-
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("sink.LasSinkTask")
 }

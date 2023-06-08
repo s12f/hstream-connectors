@@ -7,12 +7,12 @@ import io.hstream.io.SinkOffsetsManager;
 import lombok.SneakyThrows;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
@@ -22,6 +22,7 @@ public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     AtomicReference<HashMap<Long, String>> storedOffsets = new AtomicReference<>(new HashMap<>());
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     static ObjectMapper mapper = new ObjectMapper();
+    AtomicInteger bufferState = new AtomicInteger(0);
 
     SinkOffsetsManagerImpl(KvStore kvStore, String prefix) {
         this.kvStore = kvStore;
@@ -43,13 +44,18 @@ public class SinkOffsetsManagerImpl implements SinkOffsetsManager {
     @Override
     public void update(long shardId, String recordId) {
         offsets.compute(shardId, (k, v) -> recordId);
+        bufferState.set(0);
     }
 
     @SneakyThrows
     void storeOffsets() {
+        if (bufferState.get() == 2) {
+            return;
+        }
         var stored = new HashMap<>(offsets);
         kvStore.set(offsetsKey, mapper.writeValueAsString(stored));
         storedOffsets.set(stored);
+        bufferState.incrementAndGet();
     }
 
     @Override
