@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.Service;
 import io.hstream.*;
 import io.hstream.io.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -117,7 +118,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     void updateMetrics(List<SinkRecord> records) {
         var bytesSize = 0;
         for (var r : records) {
-            bytesSize += r.getRecord().getDelegate().getSerializedSize();
+            bytesSize += r.record.length;
         }
         deliveredBytes.addAndGet(bytesSize);
         deliveredRecords.addAndGet(records.size());
@@ -126,34 +127,19 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     SinkRecord makeSinkRecord(ReceivedRecord receivedRecord) {
         var record = receivedRecord.getRecord();
         if (record.isRawRecord()) {
-            var hRecord = tryConvertToHRecord(record.getRawRecord());
-            if (hRecord != null) {
-                return new SinkRecord(tryFormatHRecord(hRecord));
-            } else {
-                log.info("invalid record, stopping task");
-                latch.countDown();
-                throw new RuntimeException("invalid record");
-            }
+            return SinkRecord.builder().record(record.getRawRecord()).build();
         } else {
-            return new SinkRecord(tryFormatHRecord(record.getHRecord()));
+            var jsonString = record.getHRecord().toCompactJsonString();
+            var formattedJson = tryFormatJsonString(jsonString);
+            return SinkRecord.builder().record(formattedJson.getBytes(StandardCharsets.UTF_8)).build();
         }
     }
 
-    HRecord tryConvertToHRecord(byte[] rawRecord) {
+    String tryFormatJsonString(String str) {
         try {
-            return HRecord.newBuilder().merge(new String(rawRecord)).build();
+            return Document.parse(str).toJson();
         } catch (Exception e) {
-            return null;
-        }
-    }
-
-    HRecord tryFormatHRecord(HRecord hRecord) {
-        var jsonStr = hRecord.toCompactJsonString();
-        try {
-            var doc = Document.parse(jsonStr);
-            return HRecord.newBuilder().merge(doc.toJson()).build();
-        } catch (Exception e) {
-            return hRecord;
+            return str;
         }
     }
 

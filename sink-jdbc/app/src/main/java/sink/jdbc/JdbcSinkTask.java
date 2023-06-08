@@ -2,7 +2,6 @@ package sink.jdbc;
 
 import io.hstream.HRecord;
 import io.hstream.io.CheckResult;
-import io.hstream.io.SinkRecord;
 import io.hstream.io.SinkTask;
 import io.hstream.io.SinkTaskContext;
 
@@ -10,8 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
+import sink.jdbc.JdbcRecord.RecordType;
 
-import io.hstream.io.Utils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
@@ -25,7 +25,12 @@ abstract public class JdbcSinkTask implements SinkTask {
     @Override
     public void run(HRecord cfg, SinkTaskContext ctx) {
         init(cfg);
-        ctx.handle((stream, records) -> handleRecordsWithException(records));
+        ctx.handle((stream, records) -> {
+            var jdbcRecords = records.stream()
+                    .map(Utils::jdbcRecordFromSinkRecord)
+                    .collect(Collectors.toList());
+            handleRecordsWithException(jdbcRecords);
+        });
     }
 
     void clean() {
@@ -35,7 +40,7 @@ abstract public class JdbcSinkTask implements SinkTask {
     }
 
     @SneakyThrows
-    void handleRecordsWithException(List<SinkRecord> records) {
+    void handleRecordsWithException(List<JdbcRecord> records) {
         try {
             handleRecords(records);
         } catch (Throwable e) {
@@ -45,7 +50,7 @@ abstract public class JdbcSinkTask implements SinkTask {
     }
 
     @SneakyThrows
-    void handleRecords(List<SinkRecord> records) {
+    void handleRecords(List<JdbcRecord> records) {
         var groups = splitRecords(records);
         for (var recordsPair : groups) {
             switch (recordsPair.getKey()) {
@@ -62,23 +67,13 @@ abstract public class JdbcSinkTask implements SinkTask {
         }
     }
 
-    enum RecordType {
-        PLAIN_UPSERT,
-        UPSERT,
-        DELETE
-    }
-
     // split records for batching
-    List<Pair<RecordType, List<SinkRecord>>> splitRecords(List<SinkRecord> records) {
-        var result = new LinkedList<Pair<RecordType, List<SinkRecord>>>();
-        var cache = new LinkedList<SinkRecord>();
+    List<Pair<RecordType, List<JdbcRecord>>> splitRecords(List<JdbcRecord> records) {
+        var result = new LinkedList<Pair<RecordType, List<JdbcRecord>>>();
+        var cache = new LinkedList<JdbcRecord>();
         var currentType = RecordType.PLAIN_UPSERT;
         for (var record : records) {
-            var m = record.record.getDelegate().getFieldsMap();
-            var recordType = RecordType.PLAIN_UPSERT;
-            if (isValidIORecord(record.record)) {
-                recordType = m.get("value").hasNullValue() ? RecordType.DELETE : RecordType.UPSERT;
-            }
+            var recordType = record.getRecordType();
             if (currentType.equals(recordType)) {
                 cache.add(record);
             } else {
@@ -96,65 +91,42 @@ abstract public class JdbcSinkTask implements SinkTask {
         return result;
     }
 
-    boolean isValidIORecord(HRecord hRecord) {
-        if (hRecord.contains("key") && hRecord.contains("value")) {
-            try {
-                hRecord.getHRecord("key");
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    void upsert(List<SinkRecord> records) throws SQLException {
-        var fields = getFields(records.get(0));
-        var keys = getHRecordKeys(records.get(0).record.getHRecord("key"));
+    void upsert(List<JdbcRecord> records) throws SQLException {
+        var fields = new LinkedList<>(records.get(0).getRow().keySet());
+        var keys = new ArrayList<>(records.get(0).getKeys().keySet());
         PreparedStatement stmt = getUpsertStmt(fields, keys);
         for(var record : records) {
-            var m = record.record.getHRecord("value").getDelegate().getFieldsMap();
             for(int i = 0; i < fields.size(); i++) {
-                stmt.setObject(i + 1, Utils.pbValueToObject(m.get(fields.get(i))));
+                stmt.setObject(i + 1, record.getRow().get(fields.get(i)));
             }
             stmt.addBatch();
         }
         stmt.executeBatch();
     }
 
-    void upsertPainRecords(List<SinkRecord> records) throws SQLException {
-        var fields = getHRecordKeys(records.get(0).record);
+    void upsertPainRecords(List<JdbcRecord> records) throws SQLException {
+        var fields = new ArrayList<>(records.get(0).getRow().keySet());
         var keys = getPrimaryKeys();
         PreparedStatement stmt = getUpsertStmt(fields, keys);
         for(var record : records) {
-            var m = record.record.getDelegate().getFieldsMap();
             for(int i = 0; i < fields.size(); i++) {
-                stmt.setObject(i + 1, Utils.pbValueToObject(m.get(fields.get(i))));
+                stmt.setObject(i + 1, record.getRow().get(fields.get(i)));
             }
             stmt.addBatch();
         }
         stmt.executeBatch();
     }
 
-    void delete(List<SinkRecord> records) throws SQLException {
-        var keys = getHRecordKeys(records.get(0).record);
-        PreparedStatement stmt = getDeleteStmt(keys);
+    void delete(List<JdbcRecord> records) throws SQLException {
+        var keyFields = new ArrayList<>(records.get(0).keys.keySet());
+        PreparedStatement stmt = getDeleteStmt(keyFields);
         for(var record : records) {
-            var m = record.record.getHRecord("key").getDelegate().getFieldsMap();
-            for(int i = 0; i < keys.size(); i++) {
-                stmt.setObject(i + 1, Utils.pbValueToObject(m.get(keys.get(i))));
+            for(int i = 0; i < keyFields.size(); i++) {
+                stmt.setObject(i + 1, record.keys.get(keyFields.get(i)));
             }
             stmt.addBatch();
         }
         stmt.executeBatch();
-    }
-
-    List<String> getFields(SinkRecord record) {
-        return getHRecordKeys(record.record.getHRecord("value"));
-    }
-
-    List<String> getHRecordKeys(HRecord hRecord) {
-        return new ArrayList<>(Utils.hRecordToMap(hRecord).keySet());
     }
 
     Connection getConn() {

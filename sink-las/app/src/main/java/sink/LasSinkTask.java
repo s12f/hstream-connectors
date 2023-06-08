@@ -16,6 +16,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.bytedance.las.tunnel.ActionType.*;
 import static com.bytedance.las.tunnel.TunnelConfig.SERVICE_REGION;
@@ -32,7 +33,7 @@ public class LasSinkTask implements SinkTask {
         this.cfg = cfg;
         init();
         // config
-        ctx.handle((stream, records) -> handleWithException(records));
+        ctx.handle((stream, records) -> handleWithException(records.stream().map(LasRecord::fromSinkRecord).collect(Collectors.toList())));
     }
 
     @SneakyThrows
@@ -61,7 +62,8 @@ public class LasSinkTask implements SinkTask {
         session = null;
     }
 
-    void handleWithException(List<SinkRecord> records) {
+    void handleWithException(List<LasRecord> records) {
+        log.info("received:{}", records);
         try {
             if (session == null) {
                 init();
@@ -74,18 +76,19 @@ public class LasSinkTask implements SinkTask {
     }
 
     @SneakyThrows
-    void handle(List<SinkRecord> records) {
+    void handle(List<LasRecord> records) {
         var recordWriter = session.openRecordWriter(/*blockId*/0);
         for (var r : records) {
-            recordWriter.write(convertRecord(r.record));
+            recordWriter.write(convertRecord(r));
         }
         recordWriter.close();
         session.commit(List.of(0L), List.of(recordWriter.getAttemptId()));
     }
 
-    GenericData.Record convertRecord(HRecord hRecord) {
+    GenericData.Record convertRecord(LasRecord lasRecord) {
         var r = new GenericData.Record(schema);
-        for (var entry : Utils.hRecordToMap(hRecord).entrySet()) {
+        for (var entry : lasRecord.getRecord().entrySet()) {
+            log.info("entry key:{}, entry value:{}", entry.getKey(), entry.getValue());
             r.put(entry.getKey(), entry.getValue());
         }
         return r;

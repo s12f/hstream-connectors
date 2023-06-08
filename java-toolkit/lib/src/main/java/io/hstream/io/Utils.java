@@ -1,10 +1,13 @@
 package io.hstream.io;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import com.google.protobuf.util.JsonFormat;
 import io.hstream.HRecord;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Utils {
+    static ObjectMapper mapper = new ObjectMapper();
     public static void runWithTimeout(int timeout, Runnable runnable) {
         var thread = new Thread(runnable);
         thread.start();
@@ -50,12 +54,10 @@ public class Utils {
         }
     }
 
+    @SneakyThrows
     static public Map<String, Object> pbStructToMap(Struct struct) {
-        var m = new HashMap<String, Object>();
-        for (var entry : struct.getFieldsMap().entrySet()) {
-            m.put(entry.getKey(), pbValueToObject(entry.getValue()));
-        }
-        return m;
+        var jsonStr = JsonFormat.printer().omittingInsignificantWhitespace().print(struct);
+        return mapper.readValue(jsonStr, new TypeReference<>() {});
     }
 
     static public Map<String, Object> hRecordToMap(HRecord hRecord) {

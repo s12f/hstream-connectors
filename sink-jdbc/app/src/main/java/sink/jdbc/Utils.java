@@ -1,16 +1,21 @@
 package sink.jdbc;
 
-import io.hstream.HRecord;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-import lombok.SneakyThrows;
 
+import io.hstream.io.SinkRecord;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class Utils {
+    static ObjectMapper mapper = new ObjectMapper();
+
     static String makeFields(List<String> fields) {
         return String.join(", ", fields);
     }
@@ -37,5 +42,34 @@ public class Utils {
 
     static String makeWhere(List<String> fields) {
         return fields.stream().map(s -> String.format("%s=?", s)).collect(Collectors.joining(", "));
+    }
+
+    @SneakyThrows
+    static JdbcRecord jdbcRecordFromSinkRecord(SinkRecord record) {
+        var mapRecord = mapper.readValue(record.record, new TypeReference<Map<String, Object>>() {});
+        if (isValidIORecord(mapRecord)) {
+            var recordBuilder = JdbcRecord.builder();
+            recordBuilder.keys((Map<String, Object>) mapRecord.get("key"));
+            if (mapRecord.get("value") == null) {
+                recordBuilder.recordType(JdbcRecord.RecordType.DELETE);
+                recordBuilder.row(null);
+            } else {
+                recordBuilder.recordType(JdbcRecord.RecordType.UPSERT);
+                recordBuilder.row((Map<String, Object>) mapRecord.get("value"));
+            }
+            return recordBuilder.build();
+        }
+        return JdbcRecord.builder()
+                .row(mapRecord)
+                .keys(null)
+                .recordType(JdbcRecord.RecordType.PLAIN_UPSERT)
+                .build();
+    }
+
+    static boolean isValidIORecord(Map<String, Object> mapRecord) {
+        if (mapRecord.containsKey("key") && mapRecord.containsKey("value")) {
+            return mapRecord.get("key") instanceof Map;
+        }
+        return false;
     }
 }
