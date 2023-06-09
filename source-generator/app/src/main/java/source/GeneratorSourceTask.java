@@ -8,12 +8,6 @@ import io.hstream.io.*;
 import io.hstream.io.impl.SourceTaskContextImpl;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.jimblackler.jsongenerator.DefaultConfig;
-import net.jimblackler.jsongenerator.Generator;
-import net.jimblackler.jsongenerator.JsonGeneratorException;
-import net.jimblackler.jsonschemafriend.SchemaStore;
-
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,6 +35,7 @@ public class GeneratorSourceTask implements SourceTask {
         if (cfg.contains("schema")) {
             schema = cfg.getString("schema");
         }
+        log.info("schema:{}", schema);
         assert batchSize > 0;
         assert period > 0;
         var seq = 0;
@@ -51,8 +46,10 @@ public class GeneratorSourceTask implements SourceTask {
         switch (DataType.valueOf(cfg.getString("type").toUpperCase())) {
             case SEQUENCE:
                 generator = getSequenceGenerator(seq);
+                break;
             case JSON:
                 generator = getJsonGeneratorFromSchema(schema);
+                break;
         }
         while (true) {
             if (needStop) {
@@ -78,23 +75,10 @@ public class GeneratorSourceTask implements SourceTask {
 
     @SneakyThrows
     Supplier<Record> getJsonGeneratorFromSchema(String schemaStr) {
-        var config = DefaultConfig.build()
-                .setGenerateMinimal(false)
-                .setNonRequiredPropertyChance(0.5f)
-                .get();
-        SchemaStore schemaStore = new SchemaStore(true);
-        var schema = schemaStore.loadSchemaJson(schemaStr);
-        var jsonGenerator = new Generator(config, schemaStore, new Random());
+        var jsonFaker = new JsonFaker(schemaStr);
         return () -> {
-            try {
-                var data = jsonGenerator.generate(schema, 10);
-                log.info("data:{}", data);
-                return Record.newBuilder()
-                        .rawRecord(mapper.valueToTree(data).toString().getBytes(StandardCharsets.UTF_8))
-                        .build();
-            } catch (JsonGeneratorException e) {
-                throw new RuntimeException(e);
-            }
+            var jsonData = jsonFaker.generate();
+            return Record.newBuilder().hRecord(HRecord.newBuilder().merge(jsonData).build()).build();
         };
     }
 
@@ -107,7 +91,7 @@ public class GeneratorSourceTask implements SourceTask {
                     .put("randomSmallInt", rnd.nextInt(10))
                     .put("randomDate", Instant.now().toString())
                     .toString();
-            return Record.newBuilder().rawRecord(jsonData.getBytes(StandardCharsets.UTF_8)).build();
+            return Record.newBuilder().hRecord(HRecord.newBuilder().merge(jsonData).build()).build();
         };
     }
 

@@ -28,10 +28,6 @@ dependencies {
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
-
-    // json schema
-    implementation 'net.jimblackler:jsongenerator:0.4.6'
-    implementation 'net.jimblackler.jsonschemafriend:core:0.11.4'
 }
 
 var imageVersion = System.getenv("CONNECTOR_IMAGE_VERSION")
