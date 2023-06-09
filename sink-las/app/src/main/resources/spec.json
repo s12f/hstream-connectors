@@ -10,11 +10,13 @@
     },
     "accessId": {
       "description": "access id",
-      "type": "string"
+      "type": "string",
+      "ui:type": "secret"
     },
     "accessKey": {
       "description": "access key",
-      "type": "string"
+      "type": "string",
+      "ui:type": "secret"
     },
     "endpoint": {
       "description": "endpoint",
@@ -37,7 +39,7 @@
     "mode": {
       "description": "write mode",
       "type": "string",
-      "enum": ["UPSERT", "INSERT", "OVERWRITE_INSERT"],
+      "enum": ["UPSERT", "OVERWRITE_INSERT"],
       "default": "UPSERT"
     }
   },

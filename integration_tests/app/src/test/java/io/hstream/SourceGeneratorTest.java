@@ -45,4 +45,50 @@ public class SourceGeneratorTest {
     var seq = result.size() - 1;
     Assertions.assertEquals(seq, result.get(seq).getInt("id"));
   }
+
+  @SneakyThrows
+  @Test
+  void testJsonSchema() {
+    var schema = "{\n" +
+            "  \"type\": \"object\",\n" +
+            "  \"properties\": {\n" +
+            "    \"k1\": {\n" +
+            "      \"type\": \"integer\"\n" +
+            "    },\n" +
+            "    \"v1\": {\n" +
+            "      \"type\": \"integer\"\n" +
+            "    },\n" +
+            "    \"v2\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"p1\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    },\n" +
+            "    \"p2\": {\n" +
+            "      \"type\": \"string\"\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"required\": [\"k1\", \"v1\", \"v2\", \"p1\", \"p2\"]\n" +
+            "}\n";
+    var cfg =
+            mapper
+                    .createObjectNode()
+                    .put("stream", "stream01")
+                    .put("type", "json")
+                    .put("batchSize", 1)
+                    .put("period", 1)
+                    .put("schema", schema);
+    var connector =
+            helper.client.createConnector(
+                    CreateConnectorRequest.newBuilder()
+                            .name("src01")
+                            .type(ConnectorType.valueOf("SOURCE"))
+                            .target("generator")
+                            .config(cfg.toString())
+                            .build());
+    log.info("created connector:{}", connector);
+    Thread.sleep(5000);
+    var result = Utils.readStream(helper.client, "stream01", 10, 15);
+    log.info("result:{}", result);
+  }
 }
