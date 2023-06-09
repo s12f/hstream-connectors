@@ -63,7 +63,6 @@ public class LasSinkTask implements SinkTask {
     }
 
     void handleWithException(List<LasRecord> records) {
-        log.info("received:{}", records);
         try {
             if (session == null) {
                 init();
@@ -88,16 +87,21 @@ public class LasSinkTask implements SinkTask {
     GenericData.Record convertRecord(LasRecord lasRecord) {
         var r = new GenericData.Record(schema);
         for (var entry : lasRecord.getRecord().entrySet()) {
-            log.info("entry key:{}, entry value:{}", entry.getKey(), entry.getValue());
-            r.put(entry.getKey(), entry.getValue());
+            var value = entry.getValue();
+            if (schema.getField(entry.getKey()).schema().getType().equals(Schema.Type.INT)) {
+                var intValue = (int) value;
+                r.put(entry.getKey(), intValue);
+            } else {
+                r.put(entry.getKey(), value);
+            }
         }
         return r;
     }
 
     static ActionType getActionType(String mode) {
         switch (mode.toUpperCase()) {
-            case "INSERT":
-                return INSERT;
+//            case "INSERT":
+//                return INSERT;
             case "OVERWRITE_INSERT":
                 return OVERWRITE_INSERT;
             default:
