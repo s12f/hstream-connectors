@@ -23,7 +23,8 @@
     },
     "password": {
       "description": "postgresql password",
-      "type": "string"
+      "type": "string",
+      "ui:type": "secret"
     },
     "database": {
       "description": "target database name",
