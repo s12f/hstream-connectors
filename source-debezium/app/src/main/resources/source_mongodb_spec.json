@@ -20,8 +20,10 @@
       "type": "string"
     },
     "password": {
-      "title": "Password", "description": "password of the user",
-      "type": "string"
+      "title": "Password",
+      "description": "password of the user",
+      "type": "string",
+      "ui:type": "secret"
     },
     "database": {
       "title": "Database Name",

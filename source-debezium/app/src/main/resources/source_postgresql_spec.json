@@ -17,7 +17,8 @@
     "password": {
       "title": "Password",
       "description": "password of the user",
-      "type": "string"
+      "type": "string",
+      "ui:type": "secret"
     },
     "host": {
       "title": "Hostname",
