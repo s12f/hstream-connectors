@@ -53,7 +53,9 @@ public class SourceGeneratorTest {
             "  \"type\": \"object\",\n" +
             "  \"properties\": {\n" +
             "    \"k1\": {\n" +
-            "      \"type\": \"integer\"\n" +
+            "      \"type\": \"integer\",\n" +
+            "      \"minimum\": 0,\n" +
+            "      \"maximum\": 100\n" +
             "    },\n" +
             "    \"v1\": {\n" +
             "      \"type\": \"integer\"\n" +
