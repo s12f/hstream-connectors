@@ -20,11 +20,12 @@ public class JsonFaker {
         var json = mapper.readTree(schema);
         var objectJson = json.get("properties");
         objectJson.fieldNames().forEachRemaining(key -> {
-            var type = objectJson.get(key).get("type").asText().toLowerCase();
+            var obj = objectJson.get(key);
+            var type = obj.get("type").asText().toLowerCase();
             switch (type) {
                 case "integer":
-                    var min = objectJson.get("minimum") == null ? 0 : objectJson.get("minimum").asInt();
-                    var max = objectJson.get("maximum") == null ? 1000000 : objectJson.get("maximum").asInt();
+                    var min = obj.get("minimum") == null ? 0 : obj.get("minimum").asInt();
+                    var max = obj.get("maximum") == null ? 1000000 : obj.get("maximum").asInt();
                     objectGenerator.put(key, () -> ThreadLocalRandom.current().nextInt(min, max));
                     break;
                 case "string":
