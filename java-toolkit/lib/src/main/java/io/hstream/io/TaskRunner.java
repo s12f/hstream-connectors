@@ -172,7 +172,11 @@ public class TaskRunner {
     public void report() {
         log.info("reporting task information");
         try {
-            rpc.report(ctx.getReportMessage()).get(5, TimeUnit.SECONDS);
+            var reportMessage = ctx.getReportMessage();
+            if (task instanceof SourceTask) {
+                reportMessage.setOffsets(((SourceTask) task).getOffsets());
+            }
+            rpc.report(reportMessage).get(5, TimeUnit.SECONDS);
         } catch (Throwable e) {
             log.info("report exited:{}", e.getMessage());
             e.printStackTrace();
