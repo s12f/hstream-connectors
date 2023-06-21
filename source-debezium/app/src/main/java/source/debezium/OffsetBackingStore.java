@@ -1,21 +1,30 @@
 package source.debezium;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.io.KvStore;
 import java.nio.ByteBuffer;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.runtime.WorkerConfig;
 import org.apache.kafka.connect.util.Callback;
 
-// for debezium
+@Slf4j
 public class OffsetBackingStore implements org.apache.kafka.connect.storage.OffsetBackingStore {
     static KvStore store;
+    static String namespace;
+    static AtomicReference<List<JsonNode>> offsets = new AtomicReference<>(List.of());
+
     static public void setKvStore(KvStore kvStore) {
         store = kvStore;
+    }
+
+    static public void setNamespace(String namespace) {
+        OffsetBackingStore.namespace = namespace;
     }
 
     @Override
@@ -45,7 +54,17 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
 
     @Override
     public Future<Void> set(Map<ByteBuffer, ByteBuffer> values, Callback<Void> callback) {
+        var newOffsets = new ArrayList<JsonNode>(values.size());
         for (var entry : values.entrySet()) {
+            JsonNode offset = null;
+            try (var jc = new JsonDeserializer()) {
+                offset = jc.deserialize(namespace, entry.getValue().array());
+                newOffsets.add(offset);
+            } catch (Exception e) {
+                log.info("get offsets failed:{}", e.getMessage());
+                e.printStackTrace();
+            }
+            log.info("offset value:{}", offset);
             try {
                 var keyStr = "offset_" + Base64.getEncoder().encodeToString(entry.getKey().array());
                 var val = Base64.getEncoder().encodeToString(entry.getValue().array());
@@ -57,7 +76,12 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
         var f = new CompletableFuture<Void>();
         f.complete(null);
         callback.onCompletion(null, null);
+        offsets.set(newOffsets);
         return f;
+    }
+
+    static public List<JsonNode> getOffsets() {
+        return offsets.get();
     }
 
     @Override

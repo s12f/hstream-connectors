@@ -3,6 +3,7 @@
  */
 package source.debezium;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
@@ -10,6 +11,7 @@ import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
 import io.hstream.io.SourceTaskContext;
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
 import java.util.UUID;
@@ -32,8 +34,9 @@ abstract class DebeziumSourceTask implements SourceTask {
         this.ctx = ctx;
         props.setProperty("name", "engine");
         OffsetBackingStore.setKvStore(ctx.getKvStore());
+        OffsetBackingStore.setNamespace(namespace);
         props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
-        props.setProperty("offset.flush.interval.ms", "10000");
+        props.setProperty("offset.flush.interval.ms", "3000");
 
         // schema
         props.setProperty("key.converter", "org.apache.kafka.connect.json.JsonConverter");
@@ -52,6 +55,11 @@ abstract class DebeziumSourceTask implements SourceTask {
                 .build();
 
         engine.run();
+    }
+
+    @Override
+    public List<JsonNode> getOffsets() {
+        return OffsetBackingStore.getOffsets();
     }
 
     @Override

@@ -3,8 +3,14 @@
  */
 package io.hstream.io;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.hstream.HRecord;
+
+import java.util.List;
 
 public interface SourceTask extends Task {
     void run(HRecord config, SourceTaskContext ctx);
+    default List<JsonNode> getOffsets() {
+        return List.of();
+    }
 }
