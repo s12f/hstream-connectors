@@ -81,6 +81,9 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
     @SneakyThrows
     static public List<JsonNode> getOffsets() {
         var offsets = new LinkedList<JsonNode>();
+        if (offsetsManager == null) {
+            return offsets;
+        }
         for (var entry : offsetsManager.getStoredOffsets().entrySet()) {
             log.info("offset entry:{}, {}", entry.getKey(), entry.getValue());
             offsets.add(mapper.readTree(entry.getValue()));
