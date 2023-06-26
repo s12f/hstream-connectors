@@ -11,7 +11,7 @@ public abstract class RdbSourceTask extends DebeziumSourceTask {
         props.setProperty("database.port", String.valueOf(cfg.getInt("port")));
         props.setProperty("database.user", cfg.getString("user"));
         props.setProperty("database.password", cfg.getString("password"));
-        props.setProperty("database.server.name", namespace);
+        props.setProperty("database.server.name", getNamespace(ctx.getKvStore()));
 
         // transforms
         props.setProperty("transforms", "unwrap");

@@ -9,11 +9,14 @@ import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import io.hstream.HRecord;
+import io.hstream.io.KvStore;
 import io.hstream.io.SourceTaskContext;
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 import io.hstream.io.SourceTask;
+import io.hstream.io.impl.SourceOffsetsManagerImpl;
+
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -21,7 +24,7 @@ abstract class DebeziumSourceTask implements SourceTask {
     DebeziumEngine<ChangeEvent<String, String>> engine;
     SourceTaskContext ctx;
     Properties props = new Properties();
-    String namespace = UUID.randomUUID().toString().replace("-", "");
+    private String namespace;
 
     public void setKeyMapper(Function<HRecord, HRecord> keyMapper) {
         this.keyMapper = keyMapper;
@@ -34,7 +37,8 @@ abstract class DebeziumSourceTask implements SourceTask {
         this.ctx = ctx;
         props.setProperty("name", "engine");
         OffsetBackingStore.setKvStore(ctx.getKvStore());
-        OffsetBackingStore.setNamespace(namespace);
+        OffsetBackingStore.setNamespace(getNamespace(ctx.getKvStore()));
+        OffsetBackingStore.setOffsetsManager(new SourceOffsetsManagerImpl(ctx.getKvStore(), "debezium"));
         props.setProperty("offset.storage", "source.debezium.OffsetBackingStore");
         props.setProperty("offset.flush.interval.ms", "3000");
 
@@ -51,10 +55,21 @@ abstract class DebeziumSourceTask implements SourceTask {
         engine = DebeziumEngine.create(Json.class)
                 .using(props)
                 .using(OffsetCommitPolicy.always())
-                .notifying(new RecordConsumer(ctx, namespace, cfg.getString("stream"), keyMapper))
+                .notifying(new RecordConsumer(ctx, getNamespace(ctx.getKvStore()), cfg.getString("stream"), keyMapper))
                 .build();
 
         engine.run();
+    }
+
+    public String getNamespace(KvStore kvStore) {
+        if (namespace == null) {
+            namespace = kvStore.get("namespace").join();
+            if (namespace == null) {
+                namespace = UUID.randomUUID().toString().replace("-", "");
+                kvStore.set("namespace", namespace);
+            }
+        }
+        return namespace;
     }
 
     @Override

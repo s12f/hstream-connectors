@@ -14,7 +14,7 @@ public class MongodbSourceTask extends DebeziumSourceTask {
         var collection = cfg.getString("collection");
         props.setProperty("connector.class", "io.debezium.connector.mongodb.MongoDbConnector");
         props.setProperty("mongodb.hosts", hosts);
-        props.setProperty("mongodb.name", namespace);
+        props.setProperty("mongodb.name", getNamespace(ctx.getKvStore()));
         props.setProperty("collection.include.list", dbname + "." + collection);
 
         // transformer
@@ -25,8 +25,6 @@ public class MongodbSourceTask extends DebeziumSourceTask {
         props.setProperty("transforms.unwrap.operation.header", "true");
 
         setKeyMapper(key -> HRecord.newBuilder().put("_id", key.getString("id")).build());
-
-        super.run(cfg, ctx);
     }
 
     @Override
