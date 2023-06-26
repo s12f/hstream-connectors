@@ -1,15 +1,18 @@
 package source.debezium;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.hstream.io.KvStore;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
+import io.hstream.io.SourceOffsetsManager;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.json.JsonDeserializer;
+import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.connect.runtime.WorkerConfig;
 import org.apache.kafka.connect.util.Callback;
 
@@ -17,7 +20,10 @@ import org.apache.kafka.connect.util.Callback;
 public class OffsetBackingStore implements org.apache.kafka.connect.storage.OffsetBackingStore {
     static KvStore store;
     static String namespace;
-    static AtomicReference<List<JsonNode>> offsets = new AtomicReference<>(List.of());
+    static SourceOffsetsManager offsetsManager;
+    static ObjectMapper mapper = new ObjectMapper();
+    JsonDeserializer jsonDeserializer = new JsonDeserializer();
+    JsonSerializer jsonSerializer = new JsonSerializer();
 
     static public void setKvStore(KvStore kvStore) {
         store = kvStore;
@@ -25,6 +31,10 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
 
     static public void setNamespace(String namespace) {
         OffsetBackingStore.namespace = namespace;
+    }
+
+    static public void setOffsetsManager(SourceOffsetsManager offsetsManager) {
+        OffsetBackingStore.offsetsManager = offsetsManager;
     }
 
     @Override
@@ -36,12 +46,13 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
     @Override
     public Future<Map<ByteBuffer, ByteBuffer>> get(Collection<ByteBuffer> keys) {
         var res = new HashMap<ByteBuffer, ByteBuffer>();
+        var storedOffsets = offsetsManager.getStoredOffsets();
         for (var key : keys) {
             try {
                 var keyStr = "offset_" + Base64.getEncoder().encodeToString(key.array());
-                var val = store.get(keyStr).join();
+                var val = storedOffsets.get(keyStr);
                 if (val != null) {
-                    res.put(key, ByteBuffer.wrap(Base64.getDecoder().decode(val)));
+                    res.put(key, ByteBuffer.wrap(jsonSerializer.serialize(namespace, mapper.readTree(val))));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -54,34 +65,27 @@ public class OffsetBackingStore implements org.apache.kafka.connect.storage.Offs
 
     @Override
     public Future<Void> set(Map<ByteBuffer, ByteBuffer> values, Callback<Void> callback) {
-        var newOffsets = new ArrayList<JsonNode>(values.size());
         for (var entry : values.entrySet()) {
-            JsonNode offset = null;
-            try (var jc = new JsonDeserializer()) {
-                offset = jc.deserialize(namespace, entry.getValue().array());
-                newOffsets.add(offset);
-            } catch (Exception e) {
-                log.info("get offsets failed:{}", e.getMessage());
-                e.printStackTrace();
-            }
+            JsonNode offset = jsonDeserializer.deserialize(namespace, entry.getValue().array());
             log.info("offset value:{}", offset);
-            try {
-                var keyStr = "offset_" + Base64.getEncoder().encodeToString(entry.getKey().array());
-                var val = Base64.getEncoder().encodeToString(entry.getValue().array());
-                store.set(keyStr, val).join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            var keyStr = "offset_" + Base64.getEncoder().encodeToString(entry.getKey().array());
+            var val = offset.toString();
+            offsetsManager.update(keyStr, val);
         }
         var f = new CompletableFuture<Void>();
         f.complete(null);
         callback.onCompletion(null, null);
-        offsets.set(newOffsets);
         return f;
     }
 
+    @SneakyThrows
     static public List<JsonNode> getOffsets() {
-        return offsets.get();
+        var offsets = new LinkedList<JsonNode>();
+        for (var entry : offsetsManager.getStoredOffsets().entrySet()) {
+            log.info("offset entry:{}, {}", entry.getKey(), entry.getValue());
+            offsets.add(mapper.readTree(entry.getValue()));
+        }
+        return offsets;
     }
 
     @Override
