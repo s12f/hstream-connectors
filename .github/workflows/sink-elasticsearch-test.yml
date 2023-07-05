@@ -25,6 +25,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
+      - name: build java-toolkit
+        run: |
+          cd java-toolkit
+          ./gradlew publishToMavenLocal -PdisableSigning --info)
+
       - name: run test
         run: |
           cd sink-elasticsearch
