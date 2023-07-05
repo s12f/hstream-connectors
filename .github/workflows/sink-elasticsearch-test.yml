@@ -28,7 +28,7 @@ jobs:
       - name: build java-toolkit
         run: |
           cd java-toolkit
-          ./gradlew publishToMavenLocal -PdisableSigning --info)
+          ./gradlew publishToMavenLocal -PdisableSigning --info
 
       - name: run test
         run: |
