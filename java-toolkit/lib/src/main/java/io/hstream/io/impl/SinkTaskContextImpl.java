@@ -127,11 +127,16 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     SinkRecord makeSinkRecord(ReceivedRecord receivedRecord) {
         var record = receivedRecord.getRecord();
         if (record.isRawRecord()) {
-            return SinkRecord.builder().record(record.getRawRecord()).build();
+            return SinkRecord.builder()
+                    .record(record.getRawRecord())
+                    .recordId(receivedRecord.getRecordId()).build();
         } else {
             var jsonString = record.getHRecord().toCompactJsonString();
             var formattedJson = tryFormatJsonString(jsonString);
-            return SinkRecord.builder().record(formattedJson.getBytes(StandardCharsets.UTF_8)).build();
+            return SinkRecord.builder()
+                    .record(formattedJson.getBytes(StandardCharsets.UTF_8))
+                    .recordId(receivedRecord.getRecordId())
+                    .build();
         }
     }
 

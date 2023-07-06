@@ -8,3 +8,4 @@ hstreamdb/sink-postgresql
 hstreamdb/sink-mongodb
 hstreamdb/sink-blackhole
 hstreamdb/sink-las
+hstreamdb/sink-elasticsearch

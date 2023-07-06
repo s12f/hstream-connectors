@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sink-elasticsearch",
+  "description": "the configuration specification of sink-elasticsearch",
+  "type": "object",
+  "properties": {
+    "stream": {
+      "description": "source HStream stream name",
+      "type": "string"
+    },
+    "url": {
+      "description": "connection url",
+      "type": "string",
+      "examples": ["http://localhost:9200", "http://host1:9200,host2:9200"]
+    },
+    "index": {
+      "description": "elasticsearch index name",
+      "type": "string"
+    }
+  },
+  "required": [ "stream", "url", "index" ],
+  "ui:order": [ "stream", "url", "index" ]
+}
