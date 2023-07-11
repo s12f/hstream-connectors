@@ -18,6 +18,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
+import static io.hstream.io.impl.spec.ReaderSpec.FROM_OFFSET;
+
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
     static ObjectMapper mapper = new ObjectMapper();
@@ -74,8 +76,8 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         var offsets = sinkOffsetsManager.getStoredOffsets();
         for (var shard : shards) {
             var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
-            if (cCfg.contains("task.reader.fromOffset")) {
-                offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cCfg.getString("task.reader.fromOffset")));
+            if (cCfg.contains(FROM_OFFSET)) {
+                offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cCfg.getString(FROM_OFFSET)));
             }
             if (offsets.containsKey(shard.getShardId())) {
                 offset = new StreamShardOffset(offsets.get(shard.getShardId()));
@@ -106,24 +108,30 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             count++;
             try {
                 handler.accept(stream, batch.getSinkRecords());
+                errorHandler.resetRetry(batch.getShardId());
                 return;
             } catch (ConnectorExceptions.BaseException e){
-                log.warn("delivery record failed:{}", e.getMessage());
+                log.warn("delivery record failed:{}, tried:{}", e.getMessage(), count);
                 var res = errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
                 switch (res.action) {
                     case RETRY:
+                        Thread.sleep(retryInterval * count * 1000L);
                         continue;
                     case SKIP:
                         return;
+                    case FAIL_FAST:
+                        fail();
                 }
-                break;
             } catch (Throwable e) {
                 errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
-                log.warn("deliver record failed:{}", e.getMessage());
+                log.warn("deliver record failed:{}, retried:{}", e.getMessage(), count);
                 e.printStackTrace();
                 Thread.sleep(retryInterval * count * 1000L);
             }
         }
+    }
+
+    void fail() {
         // failed
         latch.countDown();
         log.info("connector failed");

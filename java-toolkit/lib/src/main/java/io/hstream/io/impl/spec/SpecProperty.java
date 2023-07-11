@@ -11,7 +11,7 @@ public interface SpecProperty {
     String getName();
     String getType();
     default Boolean getRequired() {
-        return true;
+        return false;
     }
     default String getDescription() {
         return null;

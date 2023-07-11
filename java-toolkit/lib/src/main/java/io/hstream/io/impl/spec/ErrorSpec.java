@@ -13,6 +13,7 @@ public class ErrorSpec {
 
     static public String SKIP_COUNT_NAME = "task.error.skipCount";
     static public String STREAM_NAME = "task.error.stream";
+    static public String MAX_RETRIES = "task.error.maxRetries";
 
     @Getter
     static public class SkipCount implements SpecProperty {
@@ -25,5 +26,12 @@ public class ErrorSpec {
     static public class Stream implements SpecProperty {
         String name = STREAM_NAME;
         String type = "string";
+    }
+
+    @Getter
+    static public class maxRetries implements SpecProperty {
+        String name = MAX_RETRIES;
+        String type = "string";
+        JsonNode defaultValue = new IntNode(3);
     }
 }
