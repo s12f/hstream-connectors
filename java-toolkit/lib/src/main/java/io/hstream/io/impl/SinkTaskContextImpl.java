@@ -18,7 +18,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
-import static io.hstream.io.impl.spec.ReaderSpec.FROM_OFFSET;
+import static io.hstream.io.impl.spec.ReaderSpec.FROM_OFFSET_TYPE;
+import static io.hstream.io.impl.spec.ReaderSpec.SPECIAL_OFFSET_NAME;
 
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
@@ -75,12 +76,11 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         latch = new CountDownLatch(1);
         var offsets = sinkOffsetsManager.getStoredOffsets();
         for (var shard : shards) {
-            var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
-            if (cCfg.contains(FROM_OFFSET)) {
-                offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cCfg.getString(FROM_OFFSET)));
-            }
+            StreamShardOffset offset;
             if (offsets.containsKey(shard.getShardId())) {
                 offset = new StreamShardOffset(offsets.get(shard.getShardId()));
+            } else {
+                offset = getOffsetFromConfig(cCfg);
             }
             var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())
                     .from(offset)
@@ -98,6 +98,14 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         latch.await();
         log.info("closing connector");
         close();
+    }
+
+    StreamShardOffset getOffsetFromConfig(HRecord cfg) {
+        var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
+        if (!cfg.contains(FROM_OFFSET_TYPE)) {
+            return offset;
+        }
+        return new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cfg.getString(SPECIAL_OFFSET_NAME)));
     }
 
     @SneakyThrows

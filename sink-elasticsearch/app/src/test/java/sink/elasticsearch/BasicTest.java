@@ -8,9 +8,7 @@ import io.hstream.io.test.FakeSinkTaskContext;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
-import org.testcontainers.utility.DockerImageName;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -30,23 +28,24 @@ public class BasicTest {
     @SneakyThrows
     @BeforeEach
     void setup(TestInfo info) {
-        String url;
         if (info.getTags().contains("enableTls")) {
             es = new ES(true);
-            url = "https://localhost:" + es.getPort();
+            String hosts = "localhost:" + es.getPort();
             var ca = IOUtils.toString(getClass().getResourceAsStream("/certs/ca.crt"), StandardCharsets.UTF_8);
             cfg = HRecord.newBuilder()
                     .put("stream", "stream01")
-                    .put("url", url)
+                    .put("hosts", hosts)
+                    .put("scheme", "https")
                     .put("ca", ca)
                     .put("index", index)
                     .build();
         } else {
             es = new ES(false);
-            url = "http://localhost:" + es.getPort();
+            String hosts = "localhost:" + es.getPort();
             cfg = HRecord.newBuilder()
                     .put("stream", "stream01")
-                    .put("url", url)
+                    .put("hosts", hosts)
+                    .put("scheme", "http")
                     .put("index", index)
                     .build();
         }

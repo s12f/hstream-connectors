@@ -3,6 +3,7 @@ package sink.elasticsearch;
 import io.hstream.HRecord;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,16 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Getter
 public class ConnectionConfig {
-    String schema;
+    String scheme;
     List<Map.Entry<String, Integer>> hosts;
     String caPath;
 
     public ConnectionConfig(HRecord cfg) {
-        var url = cfg.getString("url");
-        initUrl(url);
-        if (schema.equalsIgnoreCase("https")) {
+        scheme = cfg.getString("scheme");
+        hosts = parseHosts(cfg.getString("hosts"));
+        if (scheme.equalsIgnoreCase("https")) {
             if (!cfg.contains("ca")) {
                 throw new RuntimeException("ca should not be null in https schema");
             }
@@ -31,24 +33,8 @@ public class ConnectionConfig {
     @SneakyThrows
     public List<HttpHost> toHttpHosts() {
         return hosts.stream()
-                .map(host -> new HttpHost(host.getKey(), host.getValue(), schema))
+                .map(host -> new HttpHost(host.getKey(), host.getValue(), scheme))
                 .collect(Collectors.toList());
-    }
-
-    void initUrl(String url) {
-        String uriStr = url.strip();
-        var schemaHosts = uriStr.split("://");
-        if (schemaHosts.length != 2) {
-            throw new IllegalArgumentException(
-                    "incorrect serviceUrl: " + uriStr + " (correct example: http://host1:9200)");
-        }
-        schema = schemaHosts[0];
-        try {
-            hosts = parseHosts(schemaHosts[1]);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "incorrect serviceUrl: " + uriStr + " (correct example: http://host1:9200)");
-        }
     }
 
     @SneakyThrows
@@ -58,9 +44,15 @@ public class ConnectionConfig {
     }
 
     static List<Map.Entry<String, Integer>> parseHosts(String hosts) {
-        return Arrays.stream(hosts.split(","))
-                .map(ConnectionConfig::parseHost)
-                .collect(Collectors.toList());
+        try {
+            return Arrays.stream(hosts.split(","))
+                    .map(ConnectionConfig::parseHost)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.info(e.getMessage());
+            throw new IllegalArgumentException(
+                    "incorrect hosts: " + hosts + " (correct example: host1:9200,host2:9200)");
+        }
     }
 
     static Map.Entry<String, Integer> parseHost(String host) {
@@ -71,6 +63,6 @@ public class ConnectionConfig {
         if (address_port.length == 2) {
             return Map.entry(address_port[0], Integer.valueOf(address_port[1]));
         }
-        throw new RuntimeException("invalid host:" + host);
+        throw new IllegalArgumentException("invalid host:" + host);
     }
 }
