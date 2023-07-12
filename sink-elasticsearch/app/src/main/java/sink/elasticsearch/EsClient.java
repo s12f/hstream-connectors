@@ -41,7 +41,7 @@ public class EsClient {
     ElasticsearchClient getConnection() {
         if (esClient == null) {
             RestClient restClient;
-            if (connectionConfig.getSchema().equalsIgnoreCase("https")) {
+            if (connectionConfig.getScheme().equalsIgnoreCase("https")) {
                 Path caCertificatePath = Paths.get(connectionConfig.getCaPath());
                 CertificateFactory factory =
                         CertificateFactory.getInstance("X.509");

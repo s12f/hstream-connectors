@@ -18,6 +18,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
+import static io.hstream.io.impl.spec.ReaderSpec.FROM_OFFSET_TYPE;
+import static io.hstream.io.impl.spec.ReaderSpec.SPECIAL_OFFSET_NAME;
+
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
     static ObjectMapper mapper = new ObjectMapper();
@@ -73,12 +76,11 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         latch = new CountDownLatch(1);
         var offsets = sinkOffsetsManager.getStoredOffsets();
         for (var shard : shards) {
-            var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
-            if (cCfg.contains("task.reader.fromOffset")) {
-                offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cCfg.getString("task.reader.fromOffset")));
-            }
+            StreamShardOffset offset;
             if (offsets.containsKey(shard.getShardId())) {
                 offset = new StreamShardOffset(offsets.get(shard.getShardId()));
+            } else {
+                offset = getOffsetFromConfig(cCfg);
             }
             var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())
                     .from(offset)
@@ -98,6 +100,14 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         close();
     }
 
+    StreamShardOffset getOffsetFromConfig(HRecord cfg) {
+        var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
+        if (!cfg.contains(FROM_OFFSET_TYPE)) {
+            return offset;
+        }
+        return new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cfg.getString(SPECIAL_OFFSET_NAME)));
+    }
+
     @SneakyThrows
     void handleWithRetry(BiConsumer<String, List<SinkRecord>> handler, String stream, SinkRecordBatch batch) {
         int retryInterval = 5;
@@ -106,24 +116,30 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             count++;
             try {
                 handler.accept(stream, batch.getSinkRecords());
+                errorHandler.resetRetry(batch.getShardId());
                 return;
             } catch (ConnectorExceptions.BaseException e){
-                log.warn("delivery record failed:{}", e.getMessage());
+                log.warn("delivery record failed:{}, tried:{}", e.getMessage(), count);
                 var res = errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
                 switch (res.action) {
                     case RETRY:
+                        Thread.sleep(retryInterval * count * 1000L);
                         continue;
                     case SKIP:
                         return;
+                    case FAIL_FAST:
+                        fail();
                 }
-                break;
             } catch (Throwable e) {
                 errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
-                log.warn("deliver record failed:{}", e.getMessage());
+                log.warn("deliver record failed:{}, retried:{}", e.getMessage(), count);
                 e.printStackTrace();
                 Thread.sleep(retryInterval * count * 1000L);
             }
         }
+    }
+
+    void fail() {
         // failed
         latch.countDown();
         log.info("connector failed");

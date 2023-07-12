@@ -8,21 +8,31 @@
       "description": "source HStream stream name",
       "type": "string"
     },
-    "url": {
-      "description": "connection url",
+    "hosts": {
+      "description": "connection hosts",
       "type": "string",
-      "examples": ["http://localhost:9200", "http://host1:9200,host2:9200"]
+      "examples": ["localhost:9200", "host1:9200,host2:9200"]
+    },
+    "scheme": {
+      "description": "connection scheme",
+      "type": "string",
+      "default": "http",
+      "enum": ["http", "https"]
     },
     "ca": {
       "description": "trusted ca",
       "type": "string",
-      "ui:type": "editor"
+      "ui:type": "file",
+      "ui:condition": {
+        "field": "scheme",
+        "value": "https"
+      }
     },
     "index": {
       "description": "elasticsearch index name",
       "type": "string"
     }
   },
-  "required": [ "stream", "url", "index" ],
-  "ui:order": [ "stream", "url", "ca", "index" ]
+  "required": [ "stream", "hosts", "scheme", "index" ],
+  "ui:order": [ "stream", "hosts", "scheme" ,"ca", "index" ]
 }

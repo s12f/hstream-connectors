@@ -16,8 +16,9 @@ public class ExtendedSpec {
         for (var p : properties) {
             if (p.getRequired()) {
                 ((ArrayNode)baseJson.get("required")).add(p.getName());
-                ((ObjectNode) baseJson.get("properties")).set(p.getName(), p.toProperty());
             }
+            ((ArrayNode)baseJson.get("ui:order")).add(p.getName());
+            ((ObjectNode) baseJson.get("properties")).set(p.getName(), p.toProperty());
         }
         return baseJson.toString();
     }

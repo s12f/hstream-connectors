@@ -14,8 +14,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.hstream.io.impl.spec.ErrorSpec.SKIP_COUNT_NAME;
-import static io.hstream.io.impl.spec.ErrorSpec.STREAM_NAME;
+import static io.hstream.io.impl.spec.ErrorSpec.*;
 
 public class ErrorHandler {
     // skip
@@ -24,9 +23,9 @@ public class ErrorHandler {
 
     // retry
     int maxRetries = 3;
-    ConcurrentHashMap<Long, Integer> retried;
+    ConcurrentHashMap<Long, Integer> retried = new ConcurrentHashMap<>();
 
-    String errorStream;
+    String errorStream = "connector_error_stream_" + UUID.randomUUID();
     HStreamClient client;
 
     @Getter
@@ -42,14 +41,21 @@ public class ErrorHandler {
     }
 
     public ErrorHandler(HStreamClient client, HRecord cfg) {
+        // skip count
         if (cfg.contains(SKIP_COUNT_NAME)) {
             skipCount = cfg.getInt(SKIP_COUNT_NAME);
         }
+
+        // error stream
         if (cfg.contains(STREAM_NAME)) {
             errorStream = cfg.getString(STREAM_NAME);
-        } else {
-            errorStream = "connector_error_stream_" + UUID.randomUUID();
         }
+
+        // max retries
+        if (cfg.contains(MAX_RETRIES)) {
+            maxRetries = cfg.getInt(MAX_RETRIES);
+        }
+
         this.client = client;
         try {
             client.getStream(errorStream);
@@ -64,6 +70,9 @@ public class ErrorHandler {
 
         // should retry
         if (e.shouldRetry()) {
+            if (maxRetries < -1) {
+                return Result.builder().action(Action.RETRY).build();
+            }
             var count = retried.getOrDefault(shardId, 0);
             if (count < maxRetries) {
                 retried.put(shardId, count + 1);
@@ -81,6 +90,10 @@ public class ErrorHandler {
         } else {
             return Result.builder().action(Action.FAIL_FAST).build();
         }
+    }
+
+    public void resetRetry(long shardId) {
+        retried.remove(shardId);
     }
 
     void recordError(ConnectorExceptions.BaseException e) {
