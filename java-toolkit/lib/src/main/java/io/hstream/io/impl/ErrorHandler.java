@@ -8,6 +8,7 @@ import io.hstream.io.ConnectorExceptions;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.hstream.io.impl.spec.ErrorSpec.*;
 
+@Slf4j
 public class ErrorHandler {
     // skip
     int skipCount = -1;
@@ -65,6 +67,7 @@ public class ErrorHandler {
     }
 
     public Result handleError(long shardId, ConnectorExceptions.BaseException e) {
+        log.warn("handle error:{}", e.getMessage());
         // record error
         recordError(e);
 

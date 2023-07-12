@@ -85,11 +85,16 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             var reader = client.newStreamShardReader().streamName(stream).shardId(shard.getShardId())
                     .from(offset)
                     .batchReceiver(records -> {
-                        var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
-                        synchronized (handler) {
-                            handleWithRetry(handler, stream, SinkRecordBatch.builder().shardId(shard.getShardId()).sinkRecords(sinkRecords).build());
-                            sinkOffsetsManager.update(shard.getShardId(), records.get(records.size() - 1).getRecordId());
-                            updateMetrics(sinkRecords);
+                        try {
+                            var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                            synchronized (handler) {
+                                handleWithRetry(handler, stream, SinkRecordBatch.builder().shardId(shard.getShardId()).sinkRecords(sinkRecords).build());
+                                sinkOffsetsManager.update(shard.getShardId(), records.get(records.size() - 1).getRecordId());
+                                updateMetrics(sinkRecords);
+                            }
+                        } catch (Throwable e) {
+                            log.warn("write record failed:{}", e.getMessage());
+                            throw e;
                         }
                     }).build();
             reader.startAsync().awaitRunning();

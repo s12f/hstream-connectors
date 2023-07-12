@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ErrorSpec {
     static List<SpecProperty> properties() {
-        return List.of(new SkipCount(), new Stream());
+        return List.of(new SkipCount(), new Stream(), new MaxRetries());
     }
 
     static public String SKIP_COUNT_NAME = "task.error.skipCount";
@@ -26,14 +26,14 @@ public class ErrorSpec {
     @Getter
     static public class Stream implements SpecProperty {
         String name = STREAM_NAME;
-        String uiShowName = "error stream";
+        String uiShowName = "Error Stream";
         String type = "string";
     }
 
     @Getter
-    static public class maxRetries implements SpecProperty {
+    static public class MaxRetries implements SpecProperty {
         String name = MAX_RETRIES;
-        String uiShowName = "error max retries";
+        String uiShowName = "Error Max Retries";
         String type = "string";
         JsonNode defaultValue = new IntNode(3);
     }
