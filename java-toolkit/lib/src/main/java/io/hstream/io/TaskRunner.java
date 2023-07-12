@@ -106,10 +106,10 @@ public class TaskRunner {
             case "run":
                 parseConfig(runCmd.configPath);
                 executor.execute(this::recvCmd);
-                executor.scheduleAtFixedRate(this::report, 3, 3, TimeUnit.SECONDS);
                 var connectorConfig = cfg.getHRecord("connector");
                 try {
                     ctx.init(cfg, kv);
+                    executor.scheduleAtFixedRate(this::report, 3, 3, TimeUnit.SECONDS);
                     if (task instanceof SourceTask) {
                         var st = (SourceTask) task;
                         var stc = (SourceTaskContext) taskContext;
