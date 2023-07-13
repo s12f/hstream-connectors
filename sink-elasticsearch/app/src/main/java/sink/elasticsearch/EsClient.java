@@ -30,7 +30,7 @@ import java.util.List;
 
 @Slf4j
 public class EsClient {
-    ConnectionConfig connectionConfig;
+    final ConnectionConfig connectionConfig;
     ElasticsearchClient esClient;
 
     public EsClient(HRecord cfg) {
@@ -39,10 +39,12 @@ public class EsClient {
 
     @SneakyThrows
     synchronized ElasticsearchClient getConnection() {
-        if (esClient == null) {
-            esClient = createNewConnection();
+        synchronized (connectionConfig) {
+            if (esClient == null) {
+                esClient = createNewConnection();
+            }
+            return esClient;
         }
-        return esClient;
     }
 
     @SneakyThrows
@@ -75,7 +77,9 @@ public class EsClient {
     }
 
     void reset() {
-        esClient = null;
+        synchronized (connectionConfig) {
+            esClient = null;
+        }
     }
 
     @SneakyThrows

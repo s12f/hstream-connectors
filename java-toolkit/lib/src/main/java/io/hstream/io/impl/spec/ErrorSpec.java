@@ -2,25 +2,50 @@ package io.hstream.io.impl.spec;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import io.hstream.io.Utils;
 import lombok.Getter;
 
 import java.util.List;
 
 public class ErrorSpec {
     static List<SpecProperty> properties() {
-        return List.of(new SkipCount(), new Stream(), new MaxRetries());
+        return List.of(new SkipStrategy(), new SkipCount(), new Stream(), new MaxRetries());
     }
 
+    public enum SkipStrategyEnum {
+        SkipAll,
+        SkipSome,
+        NeverSkip
+    }
+
+    static public String SKIP_STRATEGY = "task.error.skipStrategy";
     static public String SKIP_COUNT_NAME = "task.error.skipCount";
     static public String STREAM_NAME = "task.error.stream";
     static public String MAX_RETRIES = "task.error.maxRetries";
+
+    @Getter
+    static public class SkipStrategy implements SpecProperty {
+        String name = SKIP_STRATEGY;
+        String uiShowName = "Skip Strategy";
+        String description = "skip strategy if records is unwritable";
+        String type = "string";
+        JsonNode defaultValue = new TextNode("SkipAll");
+        List<JsonNode> enumValues = List.of(new TextNode(SkipStrategyEnum.SkipAll.name()),
+                new TextNode(SkipStrategyEnum.NeverSkip.name()),
+                new TextNode(SkipStrategyEnum.SkipSome.name()));
+    }
 
     @Getter
     static public class SkipCount implements SpecProperty {
         String name = SKIP_COUNT_NAME;
         String uiShowName = "skip error count";
         String type = "string";
-        JsonNode defaultValue = new IntNode(-1);
+        ObjectNode uiCondition = Utils.mapper.createObjectNode()
+                .put("field", SKIP_STRATEGY)
+                .put("value", SkipStrategyEnum.SkipSome.name());
+        JsonNode defaultValue = new IntNode(5);
     }
 
     @Getter

@@ -15,12 +15,12 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.hstream.io.impl.spec.ReaderSpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
-import static io.hstream.io.impl.spec.ReaderSpec.FROM_OFFSET_TYPE;
-import static io.hstream.io.impl.spec.ReaderSpec.SPECIAL_OFFSET_NAME;
+import static io.hstream.io.impl.spec.ReaderSpec.*;
 
 @Slf4j
 public class SinkTaskContextImpl implements SinkTaskContext {
@@ -118,11 +118,19 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     }
 
     StreamShardOffset getOffsetFromConfig(HRecord cfg) {
-        var offset = new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
-        if (!cfg.contains(FROM_OFFSET_TYPE)) {
-            return offset;
+        if (cfg.contains(FROM_OFFSET_NAME)) {
+            switch (FromOffsetEnum.valueOf(cfg.getString(FROM_OFFSET_NAME))) {
+                case EARLIEST:
+                    return new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
+                case LATEST:
+                    return new StreamShardOffset(StreamShardOffset.SpecialOffset.LATEST);
+                default:
+                    log.warn("unknown from offset:" + cfg.getString(FROM_OFFSET_NAME));
+                    throw new RuntimeException("UNKNOWN from offset");
+            }
+        } else {
+            return new StreamShardOffset(StreamShardOffset.SpecialOffset.EARLIEST);
         }
-        return new StreamShardOffset(StreamShardOffset.SpecialOffset.valueOf(cfg.getString(SPECIAL_OFFSET_NAME)));
     }
 
     @SneakyThrows
