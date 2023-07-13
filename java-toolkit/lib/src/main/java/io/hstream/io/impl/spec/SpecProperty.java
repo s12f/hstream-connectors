@@ -1,6 +1,7 @@
 package io.hstream.io.impl.spec;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.hstream.io.Utils;
 
 import java.util.List;
@@ -21,6 +22,9 @@ public interface SpecProperty {
     default String getUiShowName() {
         return null;
     }
+    default ObjectNode getUiCondition() {
+        return null;
+    }
     default JsonNode getDefaultValue() {
         return null;
     }
@@ -38,6 +42,9 @@ public interface SpecProperty {
         }
         if (getUiShowName() != null) {
             obj.put("ui:showName", getUiShowName());
+        }
+        if (getUiCondition()  != null) {
+            obj.set("ui:condition", getUiCondition());
         }
         if (getDefaultValue() != null) {
             obj.set("default", getDefaultValue());

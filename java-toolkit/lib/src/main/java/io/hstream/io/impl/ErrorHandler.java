@@ -44,8 +44,18 @@ public class ErrorHandler {
 
     public ErrorHandler(HStreamClient client, HRecord cfg) {
         // skip count
-        if (cfg.contains(SKIP_COUNT_NAME)) {
-            skipCount = cfg.getInt(SKIP_COUNT_NAME);
+        if (cfg.contains(SKIP_STRATEGY)) {
+            switch (SkipStrategyEnum.valueOf(cfg.getString(SKIP_STRATEGY))) {
+                case SkipAll:
+                    skipCount = -1;
+                    break;
+                case NeverSkip:
+                    skipCount = 0;
+                    break;
+                case SkipSome:
+                    skipCount = cfg.getInt(SKIP_COUNT_NAME);
+                    break;
+            }
         }
 
         // error stream
