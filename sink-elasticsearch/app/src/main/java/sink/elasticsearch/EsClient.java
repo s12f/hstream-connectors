@@ -135,7 +135,9 @@ public class EsClient {
             }
             return MappedRecord.builder().id(id).source(data).build();
         } catch (Exception e) {
-            skipStrategy.skip(record, e.getMessage());
+            if (!skipStrategy.trySkip(record, e.getMessage())) {
+                throw new ConnectorExceptions.FailFastError("unskippable record");
+            }
             return null;
         }
     }

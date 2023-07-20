@@ -4,6 +4,7 @@ import io.hstream.HRecord;
 import io.hstream.HStreamClient;
 import io.hstream.io.ConnectorExceptions;
 import io.hstream.io.SinkRecord;
+import io.hstream.io.SinkRecordBatch;
 import io.hstream.io.SinkSkipStrategy;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -49,12 +50,22 @@ public class SinkSkipStrategyImpl implements SinkSkipStrategy {
         if (skipCount < 0) {
             return true;
         }
-        if (skipCount > skipped.get()) {
-            skipped.incrementAndGet();
+        skipped.incrementAndGet();
+        return skipCount >= skipped.get();
+    }
+
+    @Override
+    public boolean trySkipBatch(SinkRecordBatch batch, String reason) {
+        log.warn("handle skip batch:{}", reason);
+        // record error
+        errorRecorder.recordError(new ConnectorExceptions.InvalidBatchError(batch, reason));
+
+        // skippable
+        if (skipCount < 0) {
             return true;
-        } else {
-            return false;
         }
+        skipped.addAndGet(batch.getSinkRecords().size());
+        return skipCount >= skipped.get();
     }
 
     @SneakyThrows
