@@ -32,6 +32,8 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     List<Reader> readers = new LinkedList<>();
     SinkOffsetsManager sinkOffsetsManager;
     ErrorHandler errorHandler;
+    SinkSkipStrategy sinkSkipStrategy;
+    SinkRetryStrategy retryStrategy;
 
     @Override
     public KvStore getKvStore() {
@@ -74,6 +76,9 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         var hsCfg = cfg.getHRecord("hstream");
         var cCfg = cfg.getHRecord("connector");
         client = HStreamClient.builder().serviceUrl(hsCfg.getString("serviceUrl")).build();
+        var errorRecorder = new ErrorRecorder(client, cCfg);
+        retryStrategy = new SinkRetryStrategy(cCfg, errorRecorder);
+        sinkSkipStrategy = new SinkSkipStrategyImpl(cCfg, errorRecorder);
         errorHandler = new ErrorHandler(client, cCfg);
 //        var taskId = cfg.getString("task");
         var stream = cCfg.getString("stream");
@@ -155,24 +160,22 @@ public class SinkTaskContextImpl implements SinkTaskContext {
                 handler.accept(batch);
                 sinkOffsetsManager.update(batch.getShardId(), batch.getSinkRecords().get(batch.getSinkRecords().size() - 1).getRecordId());
                 updateMetrics(batch.getSinkRecords());
-                errorHandler.resetRetry(batch.getShardId());
+                retryStrategy.resetRetry(batch.getShardId());
                 return;
-            } catch (ConnectorExceptions.BaseException e){
-                log.warn("delivery record failed:{}, tried:{}", e.getMessage(), count);
-                var res = errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
-                switch (res.action) {
-                    case RETRY:
-                        Thread.sleep(retryInterval * count * 1000L);
-                        continue;
-                    case SKIP:
-                        return;
-                    case FAIL_FAST:
-                        fail();
-                }
+            } catch (ConnectorExceptions.FailFastError e){
+                log.warn("fail fast error:{}", e.getMessage());
+                throw e;
             } catch (Throwable e) {
-                errorHandler.handleError(batch.getShardId(), new ConnectorExceptions.UnknownError(e.getMessage()));
-                log.warn("deliver record failed:{}, retried:{}", e.getMessage(), count);
-                e.printStackTrace();
+                log.warn("delivery record failed:{}, tried:{}", e.getMessage(), count);
+                if (!retryStrategy.showRetry(batch.getShardId(), e)) {
+                    if (sinkSkipStrategy.trySkipBatch(batch, "")) {
+                        return;
+                    } else {
+                        fail();
+                        throw e;
+                    }
+                }
+                log.warn("retrying, retry count:{}", count);
                 Thread.sleep(retryInterval * count * 1000L);
             }
         }
@@ -182,7 +185,6 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         // failed
         latch.countDown();
         log.info("connector failed");
-        throw new RuntimeException("connector failed");
     }
 
     void updateMetrics(List<SinkRecord> records) {
@@ -216,6 +218,11 @@ public class SinkTaskContextImpl implements SinkTaskContext {
         } catch (Exception e) {
             return str;
         }
+    }
+
+    @Override
+    public SinkSkipStrategy getSinkSkipStrategy() {
+        return sinkSkipStrategy;
     }
 
     @SneakyThrows

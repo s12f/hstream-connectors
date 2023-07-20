@@ -6,7 +6,6 @@ import lombok.SneakyThrows;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class FakeSinkTaskContext implements SinkTaskContext {
@@ -25,6 +24,12 @@ public class FakeSinkTaskContext implements SinkTaskContext {
     @Override
     public void handleParallel(Consumer<SinkRecordBatch> handler) {
         handle(handler);
+    }
+
+    @Override
+    public SinkSkipStrategy getSinkSkipStrategy() {
+        // TODO: implement fakeSinkSkipStrategy
+        return null;
     }
 
     @SneakyThrows
