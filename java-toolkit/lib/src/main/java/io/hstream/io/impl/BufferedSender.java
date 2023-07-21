@@ -5,75 +5,100 @@ import io.hstream.io.SinkRecord;
 import io.hstream.io.SinkRecordBatch;
 import lombok.SneakyThrows;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-//import java.util.concurrent.BlockingQueue;
-//import java.util.concurrent.LinkedBlockingQueue;
+import java.util.List; import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static io.hstream.io.impl.spec.BufferSpec.*;
+
 public class BufferedSender {
     Consumer<SinkRecordBatch> handler;
-    long maxBufferSize = 1048576;
+    long batchMaxBytesSize = 1048576;
     long bufferSize = 0;
-    final SinkRecordBatch batch;
-//    BlockingQueue<SinkRecordBatch> queue = new LinkedBlockingQueue<>(2);
+    final String stream;
+    long shardId;
+    List<SinkRecord> bufferedRecords = new LinkedList<>();
+    BlockingQueue<SinkRecordBatch> queue;
 
     public BufferedSender(String stream, long shardId,
                           HRecord cfg, ScheduledThreadPoolExecutor executor,
                           Consumer<SinkRecordBatch> handler) {
-        this.batch = SinkRecordBatch.builder().
-                stream(stream)
-                .shardId(shardId)
-                .sinkRecords(new LinkedList<>())
-                .build();
+        this.stream = stream;
+        this.shardId = shardId;
         this.handler = handler;
-        int maxRecordAge = 10;
-        executor.scheduleAtFixedRate(this::flush, maxRecordAge, maxRecordAge, TimeUnit.SECONDS);
-//        createSenderThread();
+        if (cfg.contains(BATCH_MAX_BYTES_SIZE)) {
+            batchMaxBytesSize = cfg.getLong(BATCH_MAX_BYTES_SIZE);
+        }
+        int maxRecordAge = 0;
+        if (cfg.contains(BATCH_MAX_AGE)) {
+            maxRecordAge = cfg.getInt(BATCH_MAX_AGE);
+        }
+        if (batchMaxBytesSize > 0 && maxRecordAge > 0) {
+            executor.scheduleAtFixedRate(this::flush, maxRecordAge, maxRecordAge, TimeUnit.SECONDS);
+        }
+        if (cfg.contains(ENABLE_BACKGROUND_FLUSH)) {
+            queue = new LinkedBlockingQueue<>(10);
+            createSenderThread();
+        }
     }
 
+    @SneakyThrows
     public void put(List<SinkRecord> records) {
+        if (batchMaxBytesSize <= 0) {
+            var newBatch = SinkRecordBatch.builder()
+                    .stream(stream)
+                    .shardId(shardId)
+                    .sinkRecords(records)
+                    .build();
+            queue.put(newBatch);
+            return;
+        }
         long size = 0;
         for (var r : records) {
             size += r.record.length;
         }
-        synchronized (batch) {
-            if (size + bufferSize > maxBufferSize) {
+        synchronized (this) {
+            if (size + bufferSize > batchMaxBytesSize) {
                 flush();
             }
-            batch.getSinkRecords().addAll(records);
+            bufferedRecords.addAll(records);
             bufferSize += size;
         }
     }
 
     @SneakyThrows
     public void flush() {
-        synchronized (batch) {
-            if (batch.getSinkRecords().isEmpty()) {
+        synchronized (this) {
+            if (bufferedRecords.isEmpty()) {
                 return;
             }
             var newBatch = SinkRecordBatch.builder()
-                    .stream(batch.getStream())
-                    .shardId(batch.getShardId())
-                    .sinkRecords(batch.getSinkRecords())
+                    .stream(stream)
+                    .shardId(shardId)
+                    .sinkRecords(bufferedRecords)
                     .build();
-            handler.accept(newBatch);
-//            queue.put(newBatch);
+            if (queue != null) {
+                queue.put(newBatch);
+            } else {
+                handler.accept(newBatch);
+            }
             bufferSize = 0;
-            batch.setSinkRecords(new LinkedList<>());
+            bufferedRecords = new ArrayList<>();
         }
     }
-//
-//    void createSenderThread() {
-//        new Thread(() -> {
-//            while (true) {
-//                try {
-//                    var newBatch = queue.take();
-//                    handler.accept(newBatch);
-//                } catch (InterruptedException ignored) {}
-//            }
-//        }).start();
-//    }
+
+    void createSenderThread() {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    var newBatch = queue.take();
+                    handler.accept(newBatch);
+                } catch (InterruptedException ignored) {}
+            }
+        }).start();
+    }
 }

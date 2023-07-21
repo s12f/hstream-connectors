@@ -26,7 +26,12 @@ public class ErrorSpec {
     static public String MAX_RETRIES = "task.error.maxRetries";
 
     @Getter
-    static public class SkipStrategy implements SpecProperty {
+    static public abstract class ErrorProperty implements SpecProperty {
+        String uiGroup = "error";
+    }
+
+    @Getter
+    static public class SkipStrategy extends ErrorProperty {
         String name = SKIP_STRATEGY;
         String uiShowName = "Skip Strategy";
         String description = "skip strategy if records is unwritable";
@@ -38,7 +43,7 @@ public class ErrorSpec {
     }
 
     @Getter
-    static public class SkipCount implements SpecProperty {
+    static public class SkipCount extends ErrorProperty {
         String name = SKIP_COUNT_NAME;
         String uiShowName = "skip error count";
         String type = "string";
@@ -49,14 +54,14 @@ public class ErrorSpec {
     }
 
     @Getter
-    static public class Stream implements SpecProperty {
+    static public class Stream extends ErrorProperty {
         String name = STREAM_NAME;
         String uiShowName = "Error Stream";
         String type = "string";
     }
 
     @Getter
-    static public class MaxRetries implements SpecProperty {
+    static public class MaxRetries extends ErrorProperty {
         String name = MAX_RETRIES;
         String uiShowName = "Error Max Retries";
         String type = "string";

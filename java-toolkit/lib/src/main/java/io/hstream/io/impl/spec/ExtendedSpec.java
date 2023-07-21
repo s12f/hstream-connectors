@@ -13,6 +13,7 @@ public class ExtendedSpec {
         var properties = new LinkedList<SpecProperty>();
         properties.addAll(ErrorSpec.properties());
         properties.addAll(ReaderSpec.properties());
+        properties.addAll(BufferSpec.properties());
         for (var p : properties) {
             if (p.getRequired()) {
                 ((ArrayNode)baseJson.get("required")).add(p.getName());
