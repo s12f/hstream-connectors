@@ -2,15 +2,17 @@ package sink.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
-import co.elastic.clients.util.BinaryData;
-import co.elastic.clients.util.ContentType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.hstream.HRecord;
-import io.hstream.io.SinkRecord;
+import io.hstream.io.*;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
@@ -18,6 +20,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.elasticsearch.client.RestClient;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -27,6 +30,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class EsClient {
@@ -83,21 +87,58 @@ public class EsClient {
     }
 
     @SneakyThrows
-    void writeRecords(String index, List<SinkRecord> records) {
+    void writeRecords(String index, SinkRecordBatch batch, SinkSkipStrategy skipStrategy) {
         var client = getConnection();
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (var record : records) {
-            BinaryData data = BinaryData.of(record.record, ContentType.APPLICATION_JSON);
+        for (var record : batch.getSinkRecords()) {
+            var mappedRecord = mapRecord(record, skipStrategy);
+            if (mappedRecord == null) {
+                continue;
+            }
             br.operations(op -> op.index(idx -> idx.index(index)
-                    .id(record.getRecordId())
-                    .document(data)));
+                    .id(mappedRecord.getId())
+                    .document(mappedRecord.getSource())));
         }
+        BulkResponse result;
         try {
-            client.bulk(br.build());
+            result = client.bulk(br.build());
         } catch (Exception e) {
             log.warn("bulk records failed:{}", e.getMessage());
             reset();
             throw e;
+        }
+        if (result != null && result.errors()) {
+            log.warn("bulk response error");
+            var reasons = result.items().stream()
+                    .filter(i -> i.error() != null)
+                    .map(i -> i.error().reason())
+                    .collect(Collectors.toList());
+            var reason = Utils.mapper.writeValueAsString(reasons);
+            throw new ConnectorExceptions.InvalidBatchError(batch, reason);
+        }
+    }
+
+    @Getter
+    @Builder
+    static class MappedRecord {
+        String id;
+        JsonNode source;
+    }
+
+    @Nullable
+    MappedRecord mapRecord(SinkRecord record, SinkSkipStrategy skipStrategy) {
+        try {
+            var data = Utils.mapper.readValue(record.getRecord(), ObjectNode.class);
+            String id = record.getRecordId();
+            if (data.get("_id") != null) {
+                id = data.remove("_id").toString();
+            }
+            return MappedRecord.builder().id(id).source(data).build();
+        } catch (Exception e) {
+            if (!skipStrategy.trySkip(record, e.getMessage())) {
+                throw new ConnectorExceptions.FailFastError("unskippable record");
+            }
+            return null;
         }
     }
 

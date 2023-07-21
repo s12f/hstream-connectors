@@ -74,6 +74,18 @@ public class BasicTest {
         Assertions.assertEquals(10, rs.size());
     }
 
+    @SneakyThrows
+    @Test
+    void testWithId() {
+        ctx.appendRecords(randSinkRecords(10, true));
+        var task = new ElasticsearchSinkTask();
+        new Thread(() -> task.run(cfg, ctx)).start();
+        Thread.sleep(5000);
+        var rs = esClient.readRecords(index);
+        log.info("rs:{}", rs);
+        Assertions.assertEquals(10, rs.size());
+    }
+
     @Tag("enableTls")
     @SneakyThrows
     @Test
@@ -88,18 +100,30 @@ public class BasicTest {
     }
 
     List<SinkRecord> randSinkRecords(int count) {
+        return randSinkRecords(count, false);
+    }
+
+    List<SinkRecord> randSinkRecords(int count, boolean includeId) {
         assert count > 0;
         return IntStream.range(0, count)
-                .mapToObj(i -> randSinkRecord())
+                .mapToObj(i -> randSinkRecord(includeId))
                 .collect(Collectors.toList());
 
     }
 
     SinkRecord randSinkRecord() {
-        var recordStr = mapper.createObjectNode().put("k1", UUID.randomUUID().toString()).toString();
+        return randSinkRecord(false);
+    }
+
+    SinkRecord randSinkRecord(boolean includeId) {
+        var recordObject = mapper.createObjectNode()
+                .put("k1", UUID.randomUUID().toString());
+        if (includeId) {
+            recordObject.put("_id", UUID.randomUUID().toString());
+        }
         return SinkRecord.builder()
                 .recordId(UUID.randomUUID().toString())
-                .record(recordStr.getBytes(StandardCharsets.UTF_8))
+                .record(recordObject.toString().getBytes(StandardCharsets.UTF_8))
                 .build();
     }
 }

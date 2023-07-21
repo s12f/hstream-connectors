@@ -22,6 +22,9 @@ public interface SpecProperty {
     default String getUiShowName() {
         return null;
     }
+    default String getUiGroup() {
+        return null;
+    }
     default ObjectNode getUiCondition() {
         return null;
     }
@@ -42,6 +45,9 @@ public interface SpecProperty {
         }
         if (getUiShowName() != null) {
             obj.put("ui:showName", getUiShowName());
+        }
+        if (getUiGroup() != null) {
+            obj.put("ui:group", getUiGroup());
         }
         if (getUiCondition()  != null) {
             obj.set("ui:condition", getUiCondition());
