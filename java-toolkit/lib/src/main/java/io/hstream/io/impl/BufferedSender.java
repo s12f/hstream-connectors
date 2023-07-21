@@ -17,7 +17,7 @@ import static io.hstream.io.impl.spec.BufferSpec.*;
 
 public class BufferedSender {
     Consumer<SinkRecordBatch> handler;
-    long batchMaxBytesSize = 1048576;
+    long batchMaxBytesSize = 0;
     long bufferSize = 0;
     final String stream;
     long shardId;
@@ -54,7 +54,7 @@ public class BufferedSender {
                     .shardId(shardId)
                     .sinkRecords(records)
                     .build();
-            queue.put(newBatch);
+            send(newBatch);
             return;
         }
         long size = 0;
@@ -71,6 +71,15 @@ public class BufferedSender {
     }
 
     @SneakyThrows
+    void send(SinkRecordBatch batch) {
+        if (queue != null) {
+            queue.put(batch);
+        } else {
+            handler.accept(batch);
+        }
+    }
+
+    @SneakyThrows
     public void flush() {
         synchronized (this) {
             if (bufferedRecords.isEmpty()) {
@@ -81,11 +90,7 @@ public class BufferedSender {
                     .shardId(shardId)
                     .sinkRecords(bufferedRecords)
                     .build();
-            if (queue != null) {
-                queue.put(newBatch);
-            } else {
-                handler.accept(newBatch);
-            }
+            send(newBatch);
             bufferSize = 0;
             bufferedRecords = new ArrayList<>();
         }

@@ -3,7 +3,6 @@ package io.hstream.io.impl.spec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
-import io.hstream.io.Utils;
 import lombok.Getter;
 
 import java.util.List;
@@ -27,7 +26,7 @@ public class BufferSpec {
         String name = BATCH_MAX_BYTES_SIZE;
         String uiShowName = "Max Buffer Bytes for each Batch";
         String type = "integer";
-        JsonNode defaultValue = new IntNode(1048576);
+        JsonNode defaultValue = new IntNode(0);
     }
 
     @Getter
