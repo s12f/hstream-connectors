@@ -38,7 +38,7 @@ public class BufferedSender {
             maxRecordAge = cfg.getInt(BATCH_MAX_AGE);
         }
         if (batchMaxBytesSize > 0 && maxRecordAge > 0) {
-            executor.scheduleAtFixedRate(this::flush, maxRecordAge, maxRecordAge, TimeUnit.SECONDS);
+            executor.scheduleAtFixedRate(this::flush, maxRecordAge, maxRecordAge, TimeUnit.MILLISECONDS);
         }
         if (cfg.contains(ENABLE_BACKGROUND_FLUSH)) {
             queue = new LinkedBlockingQueue<>(10);
