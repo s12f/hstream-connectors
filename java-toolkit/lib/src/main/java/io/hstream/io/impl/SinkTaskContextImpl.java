@@ -108,7 +108,7 @@ public class SinkTaskContextImpl implements SinkTaskContext {
                     .readerId("io_reader_" + UUID.randomUUID())
                     .shardId(shard.getShardId())
                     .shardOffset(offset)
-                    .timeoutMs(1000)
+                    .timeoutMs(0)
                     .build();
             new Thread(() -> {
                 BufferedSender sender = new BufferedSender(stream, shard.getShardId(), cCfg, timeFlushExecutor, innerHandler);
