@@ -1,15 +1,20 @@
 package io.hstream.io.impl.spec;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Getter;
 
 import java.util.List;
 
-public class ReaderSpec {
-    static List<SpecProperty> properties() {
+public class ReaderSpec implements SpecGroup {
+    @Override
+    public List<SpecProperty> properties() {
         return List.of(new FromOffset());
+    }
+
+    @Override
+    public String name() {
+        return "Reader";
     }
 
     public enum FromOffsetEnum {
