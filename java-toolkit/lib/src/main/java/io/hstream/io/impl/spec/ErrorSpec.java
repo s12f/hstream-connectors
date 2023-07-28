@@ -9,8 +9,14 @@ import lombok.Getter;
 
 import java.util.List;
 
-public class ErrorSpec {
-    static List<SpecProperty> properties() {
+public class ErrorSpec implements SpecGroup {
+    @Override
+    public String name() {
+        return "Error Handling";
+    }
+
+    @Override
+    public List<SpecProperty> properties() {
         return List.of(new SkipStrategy(), new SkipCount(), new Stream(), new MaxRetries());
     }
 
@@ -26,12 +32,7 @@ public class ErrorSpec {
     static public String MAX_RETRIES = "task.error.maxRetries";
 
     @Getter
-    static public abstract class ErrorProperty implements SpecProperty {
-        String uiGroup = "error";
-    }
-
-    @Getter
-    static public class SkipStrategy extends ErrorProperty {
+    static public class SkipStrategy implements SpecProperty {
         String name = SKIP_STRATEGY;
         String uiShowName = "Skip Strategy";
         String description = "skip strategy if records is unwritable";
@@ -43,7 +44,7 @@ public class ErrorSpec {
     }
 
     @Getter
-    static public class SkipCount extends ErrorProperty {
+    static public class SkipCount implements SpecProperty {
         String name = SKIP_COUNT_NAME;
         String uiShowName = "skip error count";
         String type = "string";
@@ -54,14 +55,14 @@ public class ErrorSpec {
     }
 
     @Getter
-    static public class Stream extends ErrorProperty {
+    static public class Stream implements SpecProperty {
         String name = STREAM_NAME;
         String uiShowName = "Error Stream";
         String type = "string";
     }
 
     @Getter
-    static public class MaxRetries extends ErrorProperty {
+    static public class MaxRetries implements SpecProperty {
         String name = MAX_RETRIES;
         String uiShowName = "Error Max Retries";
         String type = "string";
