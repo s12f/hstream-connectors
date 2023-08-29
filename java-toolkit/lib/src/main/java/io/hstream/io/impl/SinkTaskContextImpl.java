@@ -6,7 +6,6 @@ import io.hstream.*;
 import io.hstream.io.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -29,7 +28,6 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     AtomicLong deliveredRecords = new AtomicLong(0);
     AtomicLong deliveredBytes = new AtomicLong(0);
     CountDownLatch latch = new CountDownLatch(1);
-    List<Reader> readers = new LinkedList<>();
     SinkOffsetsManager sinkOffsetsManager;
     SinkSkipStrategy sinkSkipStrategy;
     SinkRetryStrategy retryStrategy;
@@ -107,29 +105,39 @@ public class SinkTaskContextImpl implements SinkTaskContext {
             } else {
                 offset = getOffsetFromConfig(cCfg);
             }
-            var reader = client.newReader()
-                    .streamName(stream)
-                    .readerId("io_reader_" + UUID.randomUUID())
-                    .shardId(shard.getShardId())
-                    .shardOffset(offset)
-                    .timeoutMs(1000)
-                    .build();
             new Thread(() -> {
-                BufferedSender sender = new BufferedSender(stream, shard.getShardId(), cCfg, timeFlushExecutor, innerHandler);
-                while (true) {
-                    var records = reader.read(1).join();
-                    if (records.size() > 0) {
-                        var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
-//                        var batch = SinkRecordBatch.builder()
-//                                .stream(stream)
-//                                .shardId(shard.getShardId())
-//                                .sinkRecords(sinkRecords)
-//                                .build();
-                        sender.put(sinkRecords);
+                try (var reader = client.newReader()
+                        .streamName(stream)
+                        .readerId("io_reader_" + UUID.randomUUID())
+                        .shardId(shard.getShardId())
+                        .shardOffset(offset)
+                        .timeoutMs(1000)
+                        .build()) {
+                    BufferedSender sender = new BufferedSender(stream, shard.getShardId(), cCfg, timeFlushExecutor, innerHandler);
+                    int retry = 0;
+                    int maxRetry = 3;
+                    while (true) {
+                        try {
+                            var records = reader.read(1).join();
+                            if (records.size() > 0) {
+                                var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                                sender.put(sinkRecords);
+                            }
+                            retry = 0;
+                        } catch (Exception e) {
+                            log.error("read records failed, retry:{}, ", retry, e);
+                            retry++;
+                            if (retry > maxRetry) {
+                                throw new RuntimeException("retry failed");
+                            }
+                            Thread.sleep(retry * 3000L);
+                        }
                     }
+                } catch (Exception e) {
+                    log.error("thread for shard:{} exited", shard.getShardId(), e);
+                    fail();
                 }
             }).start();
-            readers.add(reader);
         }
         latch.await();
         log.info("closing connector");
@@ -228,9 +236,6 @@ public class SinkTaskContextImpl implements SinkTaskContext {
     @Override
     public void close() {
         latch.countDown();
-        for (var r : readers) {
-            r.close();
-        }
         sinkOffsetsManager.close();
         client.close();
     }

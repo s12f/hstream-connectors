@@ -48,7 +48,7 @@ public class HStreamService {
   }
 
   public GenericContainer<?> makeZooKeeper() {
-    return new GenericContainer<>(DockerImageName.parse("zookeeper"))
+    return new GenericContainer<>(DockerImageName.parse("zookeeper:3.8"))
         .withEnv("ZOO_ADMINSERVER_ENABLED", "false")
         .withNetworkMode("host");
   }
