@@ -114,11 +114,23 @@ public class SinkTaskContextImpl implements SinkTaskContext {
                         .timeoutMs(1000)
                         .build()) {
                     BufferedSender sender = new BufferedSender(stream, shard.getShardId(), cCfg, timeFlushExecutor, innerHandler);
+                    int retry = 0;
+                    int maxRetry = 3;
                     while (true) {
-                        var records = reader.read(1).join();
-                        if (records.size() > 0) {
-                            var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
-                            sender.put(sinkRecords);
+                        try {
+                            var records = reader.read(1).join();
+                            if (records.size() > 0) {
+                                var sinkRecords = records.stream().map(this::makeSinkRecord).collect(Collectors.toList());
+                                sender.put(sinkRecords);
+                            }
+                            retry = 0;
+                        } catch (Exception e) {
+                            log.error("read records failed, retry:{}, ", retry, e);
+                            retry++;
+                            if (retry > maxRetry) {
+                                throw new RuntimeException("retry failed");
+                            }
+                            Thread.sleep(retry * 3000L);
                         }
                     }
                 } catch (Exception e) {
